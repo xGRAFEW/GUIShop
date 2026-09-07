@@ -29,8 +29,13 @@ import org.bukkit.Color;
 
 
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.io.BukkitObjectInputStream;
+import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -148,6 +153,49 @@ public final class Item implements ConfigurationSerializable {
     @Getter
     @Setter
     private Permission permission;
+
+    /**
+     * A full snapshot of the original ItemStack (base64-encoded), captured the
+     * first time an item is placed into a shop or menu. Preserves the display
+     * name, lore, custom model data, and any PDC/NBT set by other plugins -
+     * properties this class doesn't otherwise know how to model - so items
+     * from other plugins keep working (and looking right) when placed in a
+     * shop instead of being rebuilt from just their material.
+     */
+    @Getter
+    @Setter
+    private String rawItem;
+
+    public boolean hasRawItem() {
+        return (rawItem != null) && !rawItem.isEmpty();
+    }
+
+    /**
+     * Serializes an ItemStack to a base64 string for storage in PDC/YAML.
+     */
+    private static String serializeItemStack(ItemStack itemStack) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             BukkitObjectOutputStream dataOutput = new BukkitObjectOutputStream(outputStream)) {
+            dataOutput.writeObject(itemStack);
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        } catch (IOException e) {
+            GUIShop.getINSTANCE().getLogUtil().debugLog("Failed to snapshot raw item: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Deserializes an ItemStack previously captured by {@link #serializeItemStack(ItemStack)}.
+     */
+    private static ItemStack deserializeItemStack(String data) {
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(data));
+             BukkitObjectInputStream dataInput = new BukkitObjectInputStream(inputStream)) {
+            return (ItemStack) dataInput.readObject();
+        } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
+            GUIShop.getINSTANCE().getLogUtil().debugLog("Failed to restore raw item snapshot: " + e.getMessage());
+            return null;
+        }
+    }
 
     private static final String SPAWNER_MATERIAL = XMaterial.SPAWNER.parseMaterial().name();
 
@@ -633,7 +681,20 @@ public final class Item implements ConfigurationSerializable {
             item.setMaterial(itemStack.getType().toString());
             item.setSlot(slot);
             item.setShop(shop);
-            
+
+            // Preserve the original item's identity (name/lore/model data/NBT from
+            // other plugins) so it survives being placed in a shop. If this item was
+            // already processed by GUIShop before, reuse its existing snapshot rather
+            // than re-snapshotting the already-decorated (buy-lore-added) render.
+            String existingRawItem = PDCUtil.getString(itemStack, PDCUtil.KEY_RAW_ITEM);
+            if (existingRawItem != null) {
+                item.setRawItem(existingRawItem);
+            } else {
+                ItemStack snapshot = itemStack.clone();
+                snapshot.setAmount(1);
+                item.setRawItem(serializeItemStack(snapshot));
+            }
+
             // Read all PDC data
             String itemType = PDCUtil.getString(itemStack, PDCUtil.KEY_ITEM_TYPE);
             GUIShop.getINSTANCE().getLogUtil().debugLog("ITEM PARSE: Read itemType from PDC = " + itemType);
@@ -792,6 +853,18 @@ public final class Item implements ConfigurationSerializable {
             return getErrorStack();
         }
 
+        // Rebuild from the original item's own snapshot (instead of a fresh vanilla
+        // item) when this item doesn't rely on one of GUIShop's own special
+        // constructions (potion/firework/skull/spawner) - this is what keeps a
+        // custom item from another plugin (its name, lore, model data, and NBT)
+        // intact when placed in a shop.
+        if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
+            ItemStack rawBase = deserializeItemStack(getRawItem());
+            if (rawBase != null) {
+                itemStack = rawBase;
+            }
+        }
+
         if (itemStack.getType() == XMaterial.matchXMaterial("PLAYER_HEAD").get().parseMaterial() && hasSkullUUID()) {
             itemStack = SkullCreator.itemFromBase64(itemStack, SkullCreator.getBase64FromUUID(getSkullUUID()), getSkullUUID());
         }
@@ -807,6 +880,13 @@ public final class Item implements ConfigurationSerializable {
             }
 
             List<String> itemLore = new ArrayList<>();
+
+            // If this item was rebuilt from a raw snapshot and nothing has
+            // explicitly overridden its lore, keep whatever lore the original
+            // item already had (e.g. another plugin's item description).
+            if (hasRawItem() && !isMenu && !hasShopLore() && itemMeta.hasLore()) {
+                itemLore.addAll(itemMeta.getLore());
+            }
 
             // Only add buy lore for purchasable items (ITEM and COMMAND types)
             // Excludes: SHOP, SHOP_SHORTCUT, DUMMY, BLANK, navigation types, etc.
@@ -1163,6 +1243,11 @@ public final class Item implements ConfigurationSerializable {
         if (hasTargetShop()) {
             PDCUtil.setString(itemStack, PDCUtil.KEY_TARGET_SHOP, getTargetShop());
         }
+        if (hasRawItem()) {
+            // Re-stamp the snapshot so a later edit reuses this same original
+            // item instead of re-snapshotting this already-decorated render.
+            PDCUtil.setString(itemStack, PDCUtil.KEY_RAW_ITEM, getRawItem());
+        }
         PDCUtil.setString(itemStack, PDCUtil.KEY_ITEM_TYPE, getItemType().toString());
 
         // Create Page
@@ -1293,6 +1378,18 @@ public final class Item implements ConfigurationSerializable {
             setResolveFailed("Item has invalid material");
         }
 
+        // Hand the player the real original item (with its name, lore, model
+        // data, and any other plugin's NBT intact) instead of a plain vanilla
+        // item rebuilt from just the material - unless it needs one of
+        // GUIShop's own special constructions below.
+        if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
+            ItemStack rawBase = deserializeItemStack(getRawItem());
+            if (rawBase != null) {
+                rawBase.setAmount(quantity);
+                itemStack = rawBase;
+            }
+        }
+
         if (hasSkullUUID() && itemStack.getType() == XMaterial.matchXMaterial("PLAYER_HEAD").get().parseMaterial()) {
             itemStack = SkullCreator.itemFromBase64(itemStack, SkullCreator.getBase64FromUUID(getSkullUUID()), getSkullUUID());
         }
@@ -1350,6 +1447,12 @@ public final class Item implements ConfigurationSerializable {
         ItemMeta itemMeta = itemStack.getItemMeta();
 
         List<String> itemLore = new ArrayList<>();
+        // Keep the original item's own lore (e.g. another plugin's item
+        // description) unless the admin explicitly configured buy-lore to
+        // replace it.
+        if (hasRawItem() && !hasBuyLore() && itemMeta.hasLore()) {
+            itemLore.addAll(itemMeta.getLore());
+        }
         if (hasBuyLore()) {
             getBuyLore().forEach(str -> {
                 itemLore.add(ChatColor.translateAlternateColorCodes('&', GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(str, player, this)));
@@ -1649,6 +1752,8 @@ public final class Item implements ConfigurationSerializable {
                 } catch (NumberFormatException exception) {
                     GUIShop.getINSTANCE().getLogUtil().log("Item in " + (shop != null ? "shop " + shop : "menu") + " and slot " + slot + " has an invalid custom model data!");
                 }
+            } else if (entry.getKey().equalsIgnoreCase("raw-item")) {
+                item.setRawItem(entry.getValue().toString());
             }
         }
         
@@ -1782,6 +1887,9 @@ public final class Item implements ConfigurationSerializable {
         }
         if (hasCustomModelID()) {
             serialized.put("custom-model-data", getCustomModelData());
+        }
+        if (hasRawItem()) {
+            serialized.put("raw-item", rawItem);
         }
 
         return serialized;

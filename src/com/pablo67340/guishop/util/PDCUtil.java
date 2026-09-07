@@ -49,6 +49,10 @@ public class PDCUtil {
     
     // Custom NBT string (for user-defined NBT, though limited with PDC)
     public static final NamespacedKey KEY_CUSTOM_NBT = new NamespacedKey(NAMESPACE, "custom_nbt");
+
+    // Full original ItemStack snapshot (base64), preserving name/lore/meta/PDC set
+    // by other plugins for items placed into a shop that aren't plain vanilla items
+    public static final NamespacedKey KEY_RAW_ITEM = new NamespacedKey(NAMESPACE, "raw_item");
     
     // Quantity
     public static final NamespacedKey KEY_QUANTITY = new NamespacedKey(NAMESPACE, "quantity");
