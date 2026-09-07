@@ -171,6 +171,24 @@ public final class Item implements ConfigurationSerializable {
     }
 
     /**
+     * Whether an item carries nothing GUIShop's own fields don't already
+     * cover - no display name, lore, custom model data, enchantments, or PDC
+     * from another plugin. Plain vanilla items (e.g. a stack of concrete
+     * dragged straight from the player's inventory) don't need - and
+     * shouldn't get - a raw snapshot: rebuilding them from just their
+     * material has always been correct and safer than round-tripping through
+     * item (de)serialization.
+     */
+    private static boolean isPlainVanillaItem(ItemStack itemStack) {
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return true;
+        }
+        return !meta.hasDisplayName() && !meta.hasLore() && !meta.hasCustomModelData()
+                && !meta.hasEnchants() && meta.getPersistentDataContainer().isEmpty();
+    }
+
+    /**
      * Serializes an ItemStack to a base64 string for storage in PDC/YAML.
      */
     private static String serializeItemStack(ItemStack itemStack) {
@@ -686,10 +704,12 @@ public final class Item implements ConfigurationSerializable {
             // other plugins) so it survives being placed in a shop. If this item was
             // already processed by GUIShop before, reuse its existing snapshot rather
             // than re-snapshotting the already-decorated (buy-lore-added) render.
+            // Plain vanilla items skip this entirely and keep rebuilding from just
+            // their material, exactly as before.
             String existingRawItem = PDCUtil.getString(itemStack, PDCUtil.KEY_RAW_ITEM);
             if (existingRawItem != null) {
                 item.setRawItem(existingRawItem);
-            } else {
+            } else if (!isPlainVanillaItem(itemStack)) {
                 ItemStack snapshot = itemStack.clone();
                 snapshot.setAmount(1);
                 item.setRawItem(serializeItemStack(snapshot));
@@ -881,13 +901,6 @@ public final class Item implements ConfigurationSerializable {
 
             List<String> itemLore = new ArrayList<>();
 
-            // If this item was rebuilt from a raw snapshot and nothing has
-            // explicitly overridden its lore, keep whatever lore the original
-            // item already had (e.g. another plugin's item description).
-            if (hasRawItem() && !isMenu && !hasShopLore() && itemMeta.hasLore()) {
-                itemLore.addAll(itemMeta.getLore());
-            }
-
             // Only add buy lore for purchasable items (ITEM and COMMAND types)
             // Excludes: SHOP, SHOP_SHORTCUT, DUMMY, BLANK, navigation types, etc.
             if (!isMenu && getItemType().isPurchasable()) {
@@ -896,6 +909,15 @@ public final class Item implements ConfigurationSerializable {
 
             if (player != null) {
                 if (!GUIShop.getCREATOR().contains(player.getUniqueId())) {
+                    // If this item was rebuilt from a raw snapshot and nothing has
+                    // explicitly overridden its lore, keep whatever lore the
+                    // original item already had (e.g. another plugin's item
+                    // description) - shown to normal players only, not in the
+                    // editor's diagnostic view.
+                    boolean loreOverridden = (!isMenu && hasShopLore()) || (isMenu && hasLore());
+                    if (hasRawItem() && !loreOverridden && itemMeta.hasLore()) {
+                        itemLore.addAll(0, itemMeta.getLore());
+                    }
                     if (hasShopName() && !isMenu) {
                         itemMeta.setDisplayName(GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getShopName(), player, this));
                     } else if (hasName()) {
