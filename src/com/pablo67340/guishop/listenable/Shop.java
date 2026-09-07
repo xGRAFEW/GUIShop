@@ -977,11 +977,23 @@ public class Shop {
             return;
         }
         
-        // Left-click to pick up an item = Delete from shop config
+        // Left-click on an existing item = just pick it up. No config change
+        // happens here - dropping it into another empty slot elsewhere in the
+        // shop (handled above) re-registers it there, and closing the editor
+        // without placing it back removes it from config via
+        // saveCreatorInventory(), so this is how items get moved around.
         if (clickedItem != null && !clickedItem.getType().isAir() && e.getClick() == ClickType.LEFT) {
+            // Don't cancel - let them pick it up
+            return;
+        }
+
+        // Shift+Left-click on an existing item = remove it from the shop
+        // immediately (and hand it back to the admin, via Bukkit's normal
+        // shift-click-to-other-inventory behavior).
+        if (clickedItem != null && !clickedItem.getType().isAir() && e.getClick() == ClickType.SHIFT_LEFT) {
             GUIShop.getINSTANCE().getLogUtil().debugLog("Removing item from slot: " + e.getSlot());
             deleteShopItem(e.getSlot());
-            // Don't cancel - let them pick it up
+            // Don't cancel - let Bukkit move it into the player's inventory
         }
     }
 

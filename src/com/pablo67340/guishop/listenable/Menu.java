@@ -1255,25 +1255,11 @@ public final class Menu {
         
         // In creator mode, ALL items can be moved with left-click
         // Navigation buttons are no longer blocked - they're just regular items that can be edited/moved
-        
-        // Left-click = Allow normal item pickup/placement for rearranging menu layout
-        // Items are saved when the inventory is closed
-        // No need to cancel - let the vanilla inventory interaction happen
-        
-        // Track slot changes for saving later
-        if (e.getClick() == ClickType.LEFT && clickedItem != null && !clickedItem.getType().isAir()) {
-            int slot = e.getSlot();
-            // Run after the event to check if item was moved
-            SchedulerUtil.runAtEntityLater(player, () -> {
-                ItemStack itemAfter = e.getInventory().getItem(slot);
-                if (itemAfter == null || itemAfter.getType().isAir()) {
-                    // Item was picked up from this slot
-                    GUIShop.getINSTANCE().getLogUtil().debugLog("Menu item picked up from slot: " + slot);
-                }
-            }, 1L);
-        }
-        
-        // Left-click with cursor item onto empty slot = Place item
+
+        // Left-click with cursor item onto empty slot = Place item (registers
+        // it at this slot immediately - this is also how an item picked up
+        // from elsewhere in the menu gets moved, since it keeps its existing
+        // configured data and just gets re-saved under the new slot).
         if ((clickedItem == null || clickedItem.getType().isAir()) && e.getCursor() != null && !e.getCursor().getType().isAir()) {
             int slot = e.getSlot();
             // Run after the event to get the placed item
@@ -1281,8 +1267,27 @@ public final class Menu {
                 ItemStack placedItem = e.getInventory().getItem(slot);
                 if (placedItem != null) {
                     GUIShop.getINSTANCE().getLogUtil().debugLog("Menu item placed at slot: " + slot);
+                    editMenuItem(placedItem, slot);
                 }
             }, 1L);
+            return;
+        }
+
+        // Left-click on an existing item = just pick it up. No config change
+        // happens here - placing it elsewhere (handled above) re-registers it
+        // there, and closing the editor without placing it back removes it
+        // from config via saveCreatorInventory().
+        if (e.getClick() == ClickType.LEFT && clickedItem != null && !clickedItem.getType().isAir()) {
+            // Don't cancel - let them pick it up
+            return;
+        }
+
+        // Shift+Left-click on an existing item = remove it from the menu
+        // immediately (and hand it back to the admin).
+        if ((e.getClick() == ClickType.SHIFT_LEFT) && clickedItem != null && !clickedItem.getType().isAir()) {
+            GUIShop.getINSTANCE().getLogUtil().debugLog("Removing menu item from slot: " + e.getSlot());
+            deleteMenuItem(e.getSlot());
+            // Don't cancel - let Bukkit move it into the player's inventory
         }
     }
 
