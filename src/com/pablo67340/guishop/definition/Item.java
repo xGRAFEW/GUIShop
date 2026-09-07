@@ -191,7 +191,7 @@ public final class Item implements ConfigurationSerializable {
         if (meta == null) {
             return true;
         }
-        if (meta.hasDisplayName() || meta.hasLore() || meta.hasCustomModelData() || meta.hasEnchants()) {
+        if (hasRealDisplayName(meta) || meta.hasLore() || meta.hasCustomModelData() || meta.hasEnchants()) {
             return false;
         }
         for (NamespacedKey key : meta.getPersistentDataContainer().getKeys()) {
@@ -200,6 +200,31 @@ public final class Item implements ConfigurationSerializable {
             }
         }
         return true;
+    }
+
+    /**
+     * Whether an item's display name is a real name, as opposed to the
+     * blank/whitespace-only one GUIShop itself puts on DUMMY items to hide the
+     * vanilla item name (see the "name" handling in {@link #serialize()}).
+     * That blank name can outlive the DUMMY type - converting an item to SHOP
+     * in the editor only clears the name PDC key, not the display name already
+     * rendered onto the item - so it must never be treated as identity worth
+     * keeping, or the item ends up permanently nameless.
+     */
+    private static boolean hasRealDisplayName(ItemMeta meta) {
+        return meta.hasDisplayName() && !ChatColor.stripColor(meta.getDisplayName()).isBlank();
+    }
+
+    /**
+     * Drops a blank display name from an item, so a snapshot of it falls back
+     * to the item's normal (translated) name instead of freezing it nameless.
+     */
+    private static void clearBlankDisplayName(ItemStack itemStack) {
+        ItemMeta meta = itemStack.getItemMeta();
+        if (meta != null && meta.hasDisplayName() && !hasRealDisplayName(meta)) {
+            meta.setDisplayName(null);
+            itemStack.setItemMeta(meta);
+        }
     }
 
     /**
@@ -726,6 +751,7 @@ public final class Item implements ConfigurationSerializable {
             } else if (!isPlainVanillaItem(itemStack)) {
                 ItemStack snapshot = itemStack.clone();
                 snapshot.setAmount(1);
+                clearBlankDisplayName(snapshot);
                 item.setRawItem(serializeItemStack(snapshot));
             }
 
@@ -895,6 +921,9 @@ public final class Item implements ConfigurationSerializable {
         if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
             ItemStack rawBase = deserializeItemStack(getRawItem());
             if (rawBase != null) {
+                // Heal snapshots taken before this was fixed, which may have
+                // frozen in GUIShop's own blank DUMMY name.
+                clearBlankDisplayName(rawBase);
                 itemStack = rawBase;
             }
         }
@@ -1421,6 +1450,9 @@ public final class Item implements ConfigurationSerializable {
         if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
             ItemStack rawBase = deserializeItemStack(getRawItem());
             if (rawBase != null) {
+                // Heal snapshots taken before this was fixed, which may have
+                // frozen in GUIShop's own blank DUMMY name.
+                clearBlankDisplayName(rawBase);
                 rawBase.setAmount(quantity);
                 itemStack = rawBase;
             }
