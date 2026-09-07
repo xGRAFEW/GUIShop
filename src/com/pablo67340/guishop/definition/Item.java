@@ -216,6 +216,21 @@ public final class Item implements ConfigurationSerializable {
     }
 
     /**
+     * Applies a configured display name to an item, unless doing so would wipe
+     * a real name the item already carries (i.e. one restored from its raw
+     * snapshot) with a blank one left over from the DUMMY convention. An
+     * explicit blank name on an item that has no name of its own is still
+     * honoured - that's how nameless decoration blocks are configured.
+     */
+    private void applyDisplayName(ItemMeta itemMeta, String configuredName, Player player) {
+        String resolved = GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(configuredName, player, this);
+        if (resolved != null && ChatColor.stripColor(resolved).isBlank() && hasRealDisplayName(itemMeta)) {
+            return;
+        }
+        itemMeta.setDisplayName(resolved);
+    }
+
+    /**
      * Drops a blank display name from an item, so a snapshot of it falls back
      * to the item's normal (translated) name instead of freezing it nameless.
      */
@@ -962,9 +977,9 @@ public final class Item implements ConfigurationSerializable {
                         itemLore.addAll(0, itemMeta.getLore());
                     }
                     if (hasShopName() && !isMenu) {
-                        itemMeta.setDisplayName(GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getShopName(), player, this));
+                        applyDisplayName(itemMeta, getShopName(), player);
                     } else if (hasName()) {
-                        itemMeta.setDisplayName(GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getName(), player, this));
+                        applyDisplayName(itemMeta, getName(), player);
                     } else if (isMobSpawner() && !isMenu) {
                         String mobName = getMobType();
                         mobName = mobName.toLowerCase();
@@ -1153,9 +1168,9 @@ public final class Item implements ConfigurationSerializable {
         } else {
             // DUMMY items (menu items) - apply name, enchantments, item-flags, custom model data
             if (hasName()) {
-                itemMeta.setDisplayName(GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getName(), player, this));
+                applyDisplayName(itemMeta, getName(), player);
             } else if (hasShopName()) {
-                itemMeta.setDisplayName(GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getShopName(), player, this));
+                applyDisplayName(itemMeta, getShopName(), player);
             }
             
             // Apply lore for menu items
@@ -1530,8 +1545,8 @@ public final class Item implements ConfigurationSerializable {
         itemMeta.setLore(itemLore);
 
         if (hasBuyName()) {
-            itemMeta.setDisplayName(
-                    ChatColor.translateAlternateColorCodes('&', GUIShop.getINSTANCE().getMiscUtils().placeholderIfy(getBuyName(), player, this)));
+            applyDisplayName(itemMeta,
+                    ChatColor.translateAlternateColorCodes('&', getBuyName()), player);
         } else if (Item.isSpawnerItem(itemStack)) {
             String mobName = getMobType();
             mobName = mobName.toLowerCase();
@@ -1859,10 +1874,18 @@ public final class Item implements ConfigurationSerializable {
         }
         serialized.put("id", material);
         
-        // For DUMMY items, use 'name' field (default to space if not set), don't use shop-name/buy-name
+        // For DUMMY items, use 'name' field, don't use shop-name/buy-name
         if (itemType == ItemType.DUMMY) {
-            // Use actual name if set, otherwise default to a space (prevents vanilla item name showing)
-            serialized.put("name", hasName() ? name : " ");
+            // Only persist a name that was actually configured. This used to
+            // default to a blank space to keep the vanilla name hidden on
+            // decoration blocks, but every item dropped into a shop starts out
+            // as DUMMY (the type is only decided once a price is set), so that
+            // default silently erased the name of ordinary items and of custom
+            // items from other plugins alike. A nameless decoration is still
+            // possible - set name: ' ' explicitly.
+            if (hasName()) {
+                serialized.put("name", name);
+            }
         } else {
             // SHOP/COMMAND/etc items use shop-name and buy-name, NOT the generic name field
         if (hasShopName()) {

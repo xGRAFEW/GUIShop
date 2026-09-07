@@ -42,6 +42,7 @@ public final class PlayerListener implements Listener {
     public static final PlayerListener INSTANCE = new PlayerListener();
 
     private final String[] commandsEntryList = {
+        // General
         "reload",
         "edit",
         "open",
@@ -49,7 +50,37 @@ public final class PlayerListener implements Listener {
         "market",
         "iteminfo",
         "parsemob",
-        "list-shops"};
+        "list-shops",
+        // Item setup (applies to the item in hand)
+        "buy-price",
+        "sell-price",
+        "shop-name",
+        "buy-name",
+        "name",
+        "type",
+        "enchant",
+        "mob-type",
+        "target-shop",
+        "permission",
+        "quantity",
+        "skull-uuid",
+        "potion-info",
+        "nbt",
+        // Lore
+        "add-shop-lore",
+        "edit-shop-lore",
+        "delete-shop-lore",
+        "add-buy-lore",
+        "edit-buy-lore",
+        "delete-buy-lore",
+        "add-lore",
+        "edit-lore",
+        "delete-lore",
+        // Command items
+        "add-command",
+        "edit-command",
+        "delete-command",
+        "list-commands"};
 
     /**
      * Opens the shop menu for a player.

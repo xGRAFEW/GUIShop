@@ -519,7 +519,7 @@ messages:
       placeholders: [ "index", "command" ]
 
     # The entry in the list
-    entry: '&7/guishop &edc {lineNumber} &7- &aDelete a command by line. Starts at 0'
+    entry: '&7/guishop &eec {lineNumber} {command} &7- &aEdit a command by line. Starts at 0'
 
   # Messages for /guishop dc
   delete-command:
