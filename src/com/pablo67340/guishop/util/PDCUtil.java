@@ -13,7 +13,7 @@ import org.bukkit.persistence.PersistentDataType;
  */
 public class PDCUtil {
 
-    private static final String NAMESPACE = "guishop";
+    public static final String NAMESPACE = "guishop";
 
     // ============== Key Definitions ==============
     // Item pricing

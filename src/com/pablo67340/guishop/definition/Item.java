@@ -12,6 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.enchantments.Enchantment;
@@ -178,14 +179,27 @@ public final class Item implements ConfigurationSerializable {
      * shouldn't get - a raw snapshot: rebuilding them from just their
      * material has always been correct and safer than round-tripping through
      * item (de)serialization.
+     * <p>
+     * GUIShop's own PDC keys (buy-price, item-type, etc. - stamped onto every
+     * item this class ever renders) don't count here: an item that's already
+     * been through the shop once and carries nothing but those is still
+     * "plain" for this purpose, otherwise every previously-configured vanilla
+     * item would look "special" the moment it's touched again.
      */
     private static boolean isPlainVanillaItem(ItemStack itemStack) {
         ItemMeta meta = itemStack.getItemMeta();
         if (meta == null) {
             return true;
         }
-        return !meta.hasDisplayName() && !meta.hasLore() && !meta.hasCustomModelData()
-                && !meta.hasEnchants() && meta.getPersistentDataContainer().isEmpty();
+        if (meta.hasDisplayName() || meta.hasLore() || meta.hasCustomModelData() || meta.hasEnchants()) {
+            return false;
+        }
+        for (NamespacedKey key : meta.getPersistentDataContainer().getKeys()) {
+            if (!PDCUtil.NAMESPACE.equals(key.getNamespace())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
