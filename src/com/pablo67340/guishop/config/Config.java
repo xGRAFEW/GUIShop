@@ -34,10 +34,6 @@ public final class Config {
 
     @Getter
     @Setter
-    private static AltSellConfig altSellConfig = new AltSellConfig();
-
-    @Getter
-    @Setter
     private static TitlesConfig titlesConfig = new TitlesConfig();
 
     @Getter

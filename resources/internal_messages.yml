@@ -43,22 +43,8 @@ messages:
     # Don't change that
     placeholders: [ "needed" ]
 
-  # The message when a player sold their items
-  sell:
-    # Configure the message
-    message: '&fYour items were sold, and &a%money% &fwas added to your account.'
-    # Don't change that
-    placeholders: [ "money" ]
-
   # The message when something unexpected happened
   something-wrong: '&cSomething went wrong, contact an admin.'
-
-  # The message when a player can't sell their things
-  cant-sell:
-    # Configure the message
-    message: '&c%count% item(s) of your items failed to sell &fand have been returned to your inventory.'
-    # Don't change that
-    placeholders: [ "count" ]
 
   # The message when a player can't buy an item
   cant-buy: '&cSorry, but you are not able to buy that item.'
@@ -99,13 +85,6 @@ messages:
     message: '&fCheck &cshops.yml &ffor shop &c%shop%. &fIt was not found.'
     # Don't change that
     placeholders: [ "shop" ]
-
-  # The message tries to sell more items than they have
-  alt-sell-not-enough:
-    # Configure the message
-    message: '&fYou do not have &c%amount% &fsuch items to sell.'
-    # Don't change that
-    placeholders: [ "amount" ]
 
   # The message when there is no economy system
   no-economy-system: '&cThe plugin didn''t detect an economy system! \n&fPlease contact a server administrator or setup an economy system.'
@@ -728,14 +707,6 @@ messages:
     # The entry in the list
     entry: '&7/guishop &esu {uuid} &7- &aSet an item''s skull uuid'
 
-  # Messages for /guishop value
-  value:
-    # Message when a player tries to get the value that doesn't exist
-    doesnt-exist: '&cThis item doesn''t exist in any of the shops.'
-
-    # The entry in the list
-    entry: '&7/guishop &evalue &7- &aGets the highest sell price for the item you are holding'
-
   # Messages for /guishop p
   permission:
     # Message when the player doesn't use the command correctly
@@ -750,20 +721,6 @@ messages:
 
     # The entry in the list
     entry: '&7/guishop &ep {permission} &7- &aSet an item''s permission'
-
-  # Messages for /guishop toggleworth
-  toggleworth:
-    # Message when worth display is now enabled for the player
-    enabled: '&aWorth display is now &2enabled&a for your items.'
-
-    # Message when worth display is now disabled for the player
-    disabled-player: '&cWorth display is now &4disabled&c for your items.'
-
-    # Message when worth display system is not available (ProtocolLib not installed)
-    disabled: '&cWorth display system is not available. Make sure ProtocolLib is installed.'
-
-    # The entry in the list
-    entry: '&7/guishop &etoggleworth/tw &7- &aToggle worth display on your items (session only)'
 
 ################################
 ##  Developed by pablo67340   ##

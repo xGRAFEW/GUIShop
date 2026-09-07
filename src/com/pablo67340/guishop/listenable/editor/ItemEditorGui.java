@@ -397,7 +397,6 @@ public class ItemEditorGui {
             case DUMMY -> Material.GLASS;
             case ITEM_DISPLAY -> Material.NETHER_STAR;
             case BUY_1, BUY_2, BUY_3 -> Material.LIME_STAINED_GLASS_PANE;
-            case SELL_1, SELL_2, SELL_3 -> Material.RED_STAINED_GLASS_PANE;
             case BACK -> Material.BARRIER;
             case PLAYER_HEAD -> Material.PLAYER_HEAD;
             case PAGE_LEFT -> Material.ARROW;
@@ -417,7 +416,7 @@ public class ItemEditorGui {
         // Show available types based on context
         if ("Transaction".equalsIgnoreCase(shopName)) {
             builder.addLoreLine(ChatColor.DARK_GRAY + "Available: DUMMY, ITEM_DISPLAY,");
-            builder.addLoreLine(ChatColor.DARK_GRAY + "BUY_1/2/3, SELL_1/2/3, BACK, PLAYER_HEAD");
+            builder.addLoreLine(ChatColor.DARK_GRAY + "BUY_1/2/3, BACK, PLAYER_HEAD");
         } else {
             builder.addLoreLine(ChatColor.DARK_GRAY + "Available: ITEM, COMMAND, DUMMY,");
             builder.addLoreLine(ChatColor.DARK_GRAY + "SHOP, BLANK, SHOP_SHORTCUT,");
@@ -755,9 +754,8 @@ public class ItemEditorGui {
         if ("Transaction".equalsIgnoreCase(shopName)) {
             // For Transaction GUI, only show transaction types and DUMMY
             availableTypes = new ItemType[]{
-                ItemType.DUMMY, ItemType.ITEM_DISPLAY, 
+                ItemType.DUMMY, ItemType.ITEM_DISPLAY,
                 ItemType.BUY_1, ItemType.BUY_2, ItemType.BUY_3,
-                ItemType.SELL_1, ItemType.SELL_2, ItemType.SELL_3,
                 ItemType.BACK, ItemType.PLAYER_HEAD
             };
         } else {

@@ -7,7 +7,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import com.pablo67340.guishop.listenable.Menu;
 import com.pablo67340.guishop.listenable.PlayerListener;
-import com.pablo67340.guishop.listenable.Sell;
 import com.pablo67340.guishop.util.ConfigManager;
 import net.md_5.bungee.api.ChatColor;
 
@@ -28,10 +27,6 @@ public class GuishopUserCommand implements CommandExecutor {
                     buyCommand(player, (args.length >= 2) ? args[1] : null);
                     return true;
 
-                } else if (GUIShop.SELL_COMMANDS.contains(args[0].toLowerCase())) {
-
-                    sellCommand(player);
-                    return true;
                 }
             } else {
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cShop cannot be used in this world"));
@@ -65,20 +60,6 @@ public class GuishopUserCommand implements CommandExecutor {
                 }
             }
 
-        } else {
-            player.sendMessage(GUIShop.getINSTANCE().getConfigManager().getNoPermission());
-        }
-    }
-
-    /**
-     * When a player uses a sell command. <br>
-     * Includes permission checks
-     *
-     * @param player the player
-     */
-    void sellCommand(Player player) {
-        if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.sell") || player.isOp()) {
-            new Sell().open(player);
         } else {
             player.sendMessage(GUIShop.getINSTANCE().getConfigManager().getNoPermission());
         }

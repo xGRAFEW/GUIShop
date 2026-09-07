@@ -37,19 +37,8 @@ messages:
   # The message when a command item fails to execute
   command-error: '&cThere was an error executing this command. Please contact an administrator.'
 
-  # The message when a player sold their items
-  # Placeholders: %money%
-  sell: '&fYour items were sold, and &a%money% &fwas added to your account.'
-
   # The message when something unexpected happened
   something-wrong: '&cSomething went wrong, contact an admin.'
-
-  # The message when a player can't sell their things
-  # Placeholders: %count%
-  cant-sell: '&c%count% item(s) of your items failed to sell &fand have been returned to your inventory.'
-  
-  # Shown when trying to sell from a block that is not a container
-  not-a-container: '&cThat block is not a valid container (chest, barrel, etc.).'
 
   # The message when a player can't buy an item
   cant-buy: '&cSorry, but you are not able to buy that item.'
@@ -82,10 +71,6 @@ messages:
   # The message when a shop couldn't be found
   # Placeholders: %shop%
   shop-not-found: '&fCheck &cshops.yml &ffor shop &c%shop%. &fIt was not found.'
-
-  # The message tries to sell more items than they have
-  # Placeholders: %amount%
-  alt-sell-not-enough: '&fYou do not have &c%amount% &fsuch items to sell.'
 
   # The message when there is no economy system
   no-economy-system:
@@ -584,21 +569,6 @@ messages:
 
     # The entry in the list
     entry: '&7/guishop &esu {uuid} &7- &aSet an item''s skull uuid'
-
-  # Messages for /guishop value and /value command
-  value:
-    # Message when a player tries to get the value that doesn't exist
-    doesnt-exist: '&cThis item doesn''t exist in any of the shops.'
-
-    # Message when the player doesn't use the command correctly
-    usage: '&fUsage: &e/value <material> &for hold an item and type &e/value'
-
-    # Message when the player enters an invalid material name
-    # Placeholders: %material%
-    invalid-material: '&cInvalid material: &f%material%&c. Please enter a valid material name.'
-
-    # The entry in the list
-    entry: '&7/guishop &evalue &7- &aGets the highest sell price for the item you are holding'
 
   # Messages for /guishop p
   permission:

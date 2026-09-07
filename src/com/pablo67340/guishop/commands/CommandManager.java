@@ -159,13 +159,6 @@ public class CommandManager {
             register(buyCommand);
         }
 
-        // Register sell commands if there are any
-        if (!GUIShop.SELL_COMMANDS.isEmpty()) {
-            GUIShop.getINSTANCE().getLogUtil().debugLog("Registering sell commands: " + StringUtil.join(GUIShop.SELL_COMMANDS, ", "));
-            SellCommand sellCommand = new SellCommand(new ArrayList<>(GUIShop.SELL_COMMANDS));
-            register(sellCommand);
-        }
-        
         this.syncCommands();
     }
 }

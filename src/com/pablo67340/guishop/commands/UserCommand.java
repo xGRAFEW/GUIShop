@@ -4,7 +4,6 @@ import com.pablo67340.guishop.GUIShop;
 import com.pablo67340.guishop.config.Config;
 import com.pablo67340.guishop.listenable.Menu;
 import com.pablo67340.guishop.listenable.PlayerListener;
-import com.pablo67340.guishop.listenable.Sell;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,9 +35,6 @@ public class UserCommand implements CommandExecutor {
 
                     buyCommand(player, (args.length >= 2) ? args[1] : null);
                     return true;
-                } else if (GUIShop.SELL_COMMANDS.contains(args[0].toLowerCase())) {
-                    sellCommand(player);
-                    return true;
                 }
             } else {
                 GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "disabled-world");
@@ -69,20 +65,6 @@ public class UserCommand implements CommandExecutor {
                 }
             }
 
-        } else {
-            GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "no-permission");
-        }
-    }
-
-    /**
-     * When a player uses a sell command. <br>
-     * Includes permission checks
-     *
-     * @param player the player
-     */
-    public void sellCommand(Player player) {
-        if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.sell") || player.isOp()) {
-            new Sell().open(player);
         } else {
             GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "no-permission");
         }

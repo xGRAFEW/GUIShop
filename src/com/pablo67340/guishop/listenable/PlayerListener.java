@@ -48,9 +48,7 @@ public final class PlayerListener implements Listener {
         "eco",
         "market",
         "iteminfo",
-        "toggleworth",
         "parsemob",
-        "value",
         "list-shops"};
 
     /**

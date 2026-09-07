@@ -2,16 +2,13 @@
 #                       TRANSACTION GUI LAYOUT                            #
 #                                                                         #
 # This file configures the layout of the Transaction GUI that appears     #
-# when a player clicks an item in a shop to buy or sell.                  #
+# when a player clicks an item in a shop to buy it.                       #
 #                                                                         #
 # SLOT TYPES:                                                             #
 #   ITEM_DISPLAY  - Shows the item being transacted (required, only one)  #
 #   BUY_1         - Buy button for quantity 1                             #
 #   BUY_2         - Buy button for quantity 2 (from config)               #
 #   BUY_3         - Buy button for quantity 3 (from config)               #
-#   SELL_1        - Sell button for quantity 1                            #
-#   SELL_2        - Sell button for quantity 2 (from config)              #
-#   SELL_3        - Sell button for quantity 3 (from config)              #
 #   BACK          - Back button (returns to shop)                         #
 #   PLAYER_HEAD   - Shows player's head with balance info                 #
 #   DUMMY         - Decorative item (no function)                         #
@@ -77,18 +74,20 @@ layout:
     id: BLACK_STAINED_GLASS_PANE
     name: ' '
   '10':
-    type: SELL_3
-    # Material is configured in config.yml transaction-gui section
-    # This slot will show: Sell x64 (or whatever quantity-3 is set to)
+    type: DUMMY
+    id: BLACK_STAINED_GLASS_PANE
+    name: ' '
   '11':
-    type: SELL_2
-    # Sell x32 button
+    type: DUMMY
+    id: BLACK_STAINED_GLASS_PANE
+    name: ' '
   '12':
-    type: SELL_1
-    # Sell x1 button
+    type: DUMMY
+    id: BLACK_STAINED_GLASS_PANE
+    name: ' '
   '13':
     type: ITEM_DISPLAY
-    # The item being bought/sold (auto-generated)
+    # The item being bought (auto-generated)
   '14':
     type: BUY_1
     # Buy x1 button
@@ -142,20 +141,11 @@ layout:
 # Button display names and lore
 # These override the titles in config.yml when set
 buttons:
-  sell:
-    name: '&c&lSell x%amount%'
-    lore:
-      - '&7Click to sell &f%amount% &7items'
-      - '&7You will receive: &a%price%'
   buy:
     name: '&a&lBuy x%amount%'
     lore:
       - '&7Click to buy &f%amount% &7items'
       - '&7Cost: &c%price%'
-  not-sellable:
-    name: '&7Not Sellable'
-    lore:
-      - '&8This item cannot be sold'
   not-buyable:
     name: '&7Not Buyable'
     lore:

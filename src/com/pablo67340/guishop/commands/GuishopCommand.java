@@ -12,7 +12,6 @@ import com.pablo67340.guishop.definition.PotionInfo;
 import com.pablo67340.guishop.listenable.Menu;
 import com.pablo67340.guishop.listenable.PlayerListener;
 import com.pablo67340.guishop.listenable.Shop;
-import com.pablo67340.guishop.listenable.Value;
 import com.pablo67340.guishop.listenable.editor.TransactionEditor;
 import com.pablo67340.guishop.util.ItemUtil;
 import com.pablo67340.guishop.util.NameUtil;
@@ -585,22 +584,6 @@ public class GuishopCommand implements CommandExecutor {
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "skull-uuid.usage");
                 }
-            } else if (args[0].equalsIgnoreCase("value") || args[0].equalsIgnoreCase("val") || args[0].equalsIgnoreCase("v")) {
-                if (GUIShop.getINSTANCE().getMiscUtils().isMainHandNull(player)) {
-                    GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "need-item");
-                } else {
-                    ItemStack item;
-
-                    if (XMaterial.getVersion() > 18) {
-                        item = player.getEquipment().getItemInMainHand();
-                    } else {
-                        item = player.getItemInHand();
-                    }
-
-                    String targetMaterial = item.getType().toString();
-                    Value value = new Value(player, targetMaterial);
-                    value.loadItems();
-                }
             } else if (args[0].equalsIgnoreCase("permission") || args[0].equalsIgnoreCase("perm") || args[0].equalsIgnoreCase("p")) {
                 if (args.length >= 2) {
                     String permission = args[1];
@@ -652,22 +635,6 @@ public class GuishopCommand implements CommandExecutor {
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "permission.usage");
                 }
-            } else if (args[0].equalsIgnoreCase("toggleworth") || args[0].equalsIgnoreCase("tw")) {
-                // Toggle worth display for the player (session-only)
-                if (GUIShop.getINSTANCE().getWorthDisplayManager() == null || !GUIShop.getINSTANCE().getWorthDisplayManager().isRegistered()) {
-                    GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "toggleworth.disabled");
-                    return true;
-                }
-                
-                boolean nowEnabled = GUIShop.getINSTANCE().getWorthDisplayManager().toggleWorthForPlayer(player);
-                if (nowEnabled) {
-                    GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "toggleworth.enabled");
-                } else {
-                    GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "toggleworth.disabled-player");
-                }
-                
-                // Force refresh inventory to apply the change immediately
-                player.updateInventory();
             } else if (args[0].equalsIgnoreCase("iteminfo") || args[0].equalsIgnoreCase("ii") || args[0].equalsIgnoreCase("info")) {
                 // Check for toggle subcommand
                 if (args.length >= 2 && args[1].equalsIgnoreCase("toggle")) {

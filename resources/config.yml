@@ -28,10 +28,6 @@ buy-commands:
   - 'buy'
   - 'shop'
 
-# Commands to open the sell inventory (without leading slash)
-sell-commands:
-  - 'sell'
-
 # How commands are registered with the server:
 #   INTERCEPT - Catches commands without formal registration (no tab completion, no conflicts)
 #   REGISTER  - Formally registers commands (tab completion works, may conflict with other plugins)
@@ -68,17 +64,16 @@ ingame-config: true
 # ITEM VISIBILITY
 # =============================================
 
-# Hide items that can only be sold (no buy price) from the shop GUI
-# These items will still be sellable via /sell and show worth in lore
-# Useful for adding sell prices to many items without cluttering shops
+# Hide items that have no buy price from the shop GUI
+# Useful for items that only exist to feed the dynamic pricing curve
 hide-non-buyable: false
 
 # Display prices in abbreviated format (1.5k, 2.5M) instead of full numbers
 abbreviate-prices: true
 
 # Show market price movement on shop items
-# When an item's live price differs from its configured base price, its buy/sell
-# lore uses the 'buy-market'/'sell-market' templates below, which can show the
+# When an item's live price differs from its configured base price, its buy
+# lore uses the 'buy-market' template below, which can show the
 # original price, the percent change and a trend arrow.
 # Items sitting at their base price, including all statically priced items,
 # keep their normal price line.
@@ -122,7 +117,7 @@ spawner-name: '&c%type% &fSpawner'
 # Enable debug messages in console (for troubleshooting)
 debug-mode: false
 
-# Log all buy/sell transactions to console
+# Log all purchase transactions to console
 transaction-log: false
 
 
@@ -181,14 +176,8 @@ titles:
   # %shopname% = Name of the shop being viewed
   shop: '&8&lShop &f> &8&l%shopname%'
 
-  # Sell inventory title
-  sell: '&8&lShop &f> &8&lSell'
-
   # Quantity selection inventory title
   qty: '&8&lSelect Amount'
-
-  # /gs value command inventory title
-  value: '&8&lItem Values'
 
   # Transaction GUI title (when clicking an item)
   # %item% = Name of the item being purchased
@@ -198,20 +187,9 @@ titles:
   # %amount% = Quantity being purchased
   transaction-buy-button: '&a&lBuy %amount%'
 
-  # Sell button display name
-  # %amount% = Quantity being sold
-  transaction-sell-button: '&c&lSell %amount%'
-
   # Buy button lore
   # %amount% = Quantity, %price% = Total cost
   transaction-buy-lore: '&7Click to buy %amount% for %price%'
-
-  # Sell button lore
-  # %amount% = Quantity, %price% = Total earnings
-  transaction-sell-lore: '&7Click to sell %amount% for %price%'
-
-  # Display when item cannot be sold
-  transaction-not-sellable: '&c&lItem Not Sellable'
 
   # Display when item cannot be bought
   transaction-not-buyable: '&c&lItem Not Buyable'
@@ -228,20 +206,18 @@ titles:
 # =============================================
 # TRANSACTION GUI SETTINGS
 # =============================================
-# Configuration for the transaction GUI (when clicking an item to buy/sell)
-# This is the GUI that shows buy/sell buttons with quantity options
+# Configuration for the transaction GUI (when clicking an item to buy)
+# This is the GUI that shows buy buttons with quantity options
 
 transaction-gui:
-  # Materials for the buy/sell quantity buttons
+  # Material for the buy quantity buttons
   buy-material: 'LIME_STAINED_GLASS_PANE'
-  sell-material: 'RED_STAINED_GLASS_PANE'
-  
-  # Material shown when item cannot be bought/sold
+
+  # Material shown when item cannot be bought
   not-buyable-material: 'GRAY_STAINED_GLASS_PANE'
-  not-sellable-material: 'GRAY_STAINED_GLASS_PANE'
 
   # Quantity amounts for the three buttons (closest to item, middle, furthest)
-  # These determine stack sizes for buy/sell buttons
+  # These determine stack sizes for the buy buttons
   quantity-1: 1
   quantity-2: 32
   quantity-3: 64
@@ -280,7 +256,6 @@ lores:
   #   %change_percent%  - how much the price moved, as a percent (e.g. 17.00%)
   #   %trend%           - the trend-up or trend-down text below
   buy-market: '&fBuy: &m%base_amount%&r %trend% &c%amount%'
-  sell-market: '&fSell: &m%base_amount%&r %trend% &c%amount%'
 
   # Trend indicators, substituted into %trend% above
   trend-up: '&a▲%change_percent%'

@@ -21,12 +21,6 @@ permissions:
   guishop.creator:
     default: op
     description: Grants access to the GUIShop creator
-  guishop.value:
-    default: true
-    description: Grants access to the /value command to check item worth
-  guishop.sell:
-    default: true
-    description: Grants access to the sell command
   guishop.economy.balance:
     default: true
     description: Grants access to /bal command
@@ -43,10 +37,6 @@ commands:
     permission: guishop.use
     aliases: gs
   guishopuser:
-    description: GUIShop alias for buy and sell commands.
+    description: GUIShop alias for buy commands.
     permission: guishop.use
-  value:
-    description: View an Item's Buy or Sell Value.
-    permission: guishop.value
-    aliases: [val, gvalue]
   # Note: /bal, /pay, /togglepay are dynamically registered only when internal economy is enabled

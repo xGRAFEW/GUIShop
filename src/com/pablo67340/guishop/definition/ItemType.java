@@ -14,9 +14,6 @@ public enum ItemType {
     BUY_1,
     BUY_2,
     BUY_3,
-    SELL_1,
-    SELL_2,
-    SELL_3,
     BACK,
     PLAYER_HEAD,
     
@@ -31,7 +28,7 @@ public enum ItemType {
      */
     public boolean isTransactionType() {
         return switch (this) {
-            case ITEM_DISPLAY, BUY_1, BUY_2, BUY_3, SELL_1, SELL_2, SELL_3, BACK, PLAYER_HEAD -> true;
+            case ITEM_DISPLAY, BUY_1, BUY_2, BUY_3, BACK, PLAYER_HEAD -> true;
             default -> false;
         };
     }

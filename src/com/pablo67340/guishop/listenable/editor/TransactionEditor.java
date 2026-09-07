@@ -164,39 +164,6 @@ public class TransactionEditor {
                 item.setItemMeta(meta);
                 return item;
                 
-            case "SELL_1":
-                item = Config.getTransactionGuiConfig().getSellMaterial().parseItem();
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Sell x" + Config.getTransactionGuiConfig().getQuantities()[0]);
-                lore.add(ChatColor.GRAY + "Sell button for quantity 1");
-                lore.add("");
-                lore.add(ChatColor.DARK_PURPLE + "Slot Type: " + ChatColor.WHITE + "SELL_1");
-                meta.setLore(lore);
-                item.setItemMeta(meta);
-                return item;
-                
-            case "SELL_2":
-                item = Config.getTransactionGuiConfig().getSellMaterial().parseItem();
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Sell x" + Config.getTransactionGuiConfig().getQuantities()[1]);
-                lore.add(ChatColor.GRAY + "Sell button for quantity 2");
-                lore.add("");
-                lore.add(ChatColor.DARK_PURPLE + "Slot Type: " + ChatColor.WHITE + "SELL_2");
-                meta.setLore(lore);
-                item.setItemMeta(meta);
-                return item;
-                
-            case "SELL_3":
-                item = Config.getTransactionGuiConfig().getSellMaterial().parseItem();
-                meta = item.getItemMeta();
-                meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "Sell x" + Config.getTransactionGuiConfig().getQuantities()[2]);
-                lore.add(ChatColor.GRAY + "Sell button for quantity 3");
-                lore.add("");
-                lore.add(ChatColor.DARK_PURPLE + "Slot Type: " + ChatColor.WHITE + "SELL_3");
-                meta.setLore(lore);
-                item.setItemMeta(meta);
-                return item;
-                
             case "BACK":
                 item = new ItemStack(Material.BARRIER);
                 meta = item.getItemMeta();

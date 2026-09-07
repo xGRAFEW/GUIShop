@@ -18,7 +18,7 @@ import java.util.List;
 public class GuishopTabCompleter implements TabCompleter {
 
     private static final List<String> BASE_COMMANDS = Arrays.asList(
-        "reload", "edit", "open", "parsemob", "toggleworth", "iteminfo", "eco", "market", "help"
+        "reload", "edit", "open", "parsemob", "iteminfo", "eco", "market", "help"
     );
     
     private static final List<String> EDIT_TARGETS = Arrays.asList(

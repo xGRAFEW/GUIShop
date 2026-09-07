@@ -48,9 +48,6 @@ public class CommandsInterceptor implements Listener {
         if (GUIShop.BUY_COMMANDS.contains(cut[0])) {
             userCommands.buyCommand(evt.getPlayer(), (cut.length >= 2) ? cut[1] : null);
             evt.setCancelled(true);
-        } else if (GUIShop.SELL_COMMANDS.contains(cut[0])) {
-            userCommands.sellCommand(evt.getPlayer());
-            evt.setCancelled(true);
         }
     }
 }

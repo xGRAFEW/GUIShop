@@ -386,24 +386,6 @@ public final class Item implements ConfigurationSerializable {
         return Config.getLoreConfig().lores.get("cannot-buy");
     }
 
-    /**
-     * Gets the lore display for this item's sell price. <br>
-     * If there is no sell price, <code>Config.getCannotSell()</code> is
-     * returned. Otherwise, the sell price is calculated based on the quantity,
-     * and the lore displaying the calculated sell price is returned. Takes into
-     * account dynamic pricing, if enabled.
-     *
-     * @param quantity the quantity of the item
-     * @return the sell price lore
-     */
-    public String getSellLore(int quantity) {
-        if (hasSellPrice()) {
-            return buildPriceLore("sell", "sell-market",
-                    getSellPriceAsDecimal().multiply(BigDecimal.valueOf(quantity)),
-                    calculateSellPrice(quantity));
-        }
-        return Config.getLoreConfig().lores.get("cannot-sell");
-    }
 
     /**
      * Builds a price lore line. <br>
@@ -826,11 +808,10 @@ public final class Item implements ConfigurationSerializable {
 
             List<String> itemLore = new ArrayList<>();
 
-            // Only add buy/sell lore for purchasable items (ITEM and COMMAND types)
+            // Only add buy lore for purchasable items (ITEM and COMMAND types)
             // Excludes: SHOP, SHOP_SHORTCUT, DUMMY, BLANK, navigation types, etc.
             if (!isMenu && getItemType().isPurchasable()) {
                 itemLore.add(getBuyLore(1));
-                itemLore.add(getSellLore(1));
             }
 
             if (player != null) {

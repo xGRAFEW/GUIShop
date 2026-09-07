@@ -3,10 +3,8 @@ package com.pablo67340.guishop.util;
 import com.cryptomorin.xseries.XSound;
 import com.pablo67340.guishop.GUIShop;
 import static com.pablo67340.guishop.GUIShop.BUY_COMMANDS;
-import static com.pablo67340.guishop.GUIShop.SELL_COMMANDS;
 import com.pablo67340.guishop.commands.CommandsInterceptor;
 import com.pablo67340.guishop.config.Config;
-import com.pablo67340.guishop.config.WorthConfig;
 import com.pablo67340.guishop.definition.CommandsMode;
 import com.pablo67340.guishop.messages.MessageSystem;
 import java.io.File;
@@ -83,7 +81,7 @@ public final class ConfigManager {
      * The overridden config file objects.
      */
     @Getter
-    private File configFile, menuFile, cacheFile, dictionaryFile, inventoryFile, messagesFile, worthFile, transactionFile;
+    private File configFile, menuFile, cacheFile, dictionaryFile, inventoryFile, messagesFile, transactionFile;
     
     /**
      * The shops folder containing individual shop files.
@@ -107,7 +105,7 @@ public final class ConfigManager {
      * The configs FileConfiguration object.
      */
     @Getter
-    private FileConfiguration mainConfig, menuConfig, cacheConfig, inventoryConfig, messagesConfig, worthConfig, transactionConfig;
+    private FileConfiguration mainConfig, menuConfig, cacheConfig, inventoryConfig, messagesConfig, transactionConfig;
 
     @Getter
     public MessageSystem messageSystem;
@@ -129,7 +127,6 @@ public final class ConfigManager {
         cacheConfig = new YamlConfiguration();
         inventoryConfig = new YamlConfiguration();
         messagesConfig = new YamlConfiguration();
-        worthConfig = new YamlConfiguration();
         transactionConfig = new YamlConfiguration();
 
         configFile = new File(this.dataFolder, "config.yml");
@@ -137,7 +134,6 @@ public final class ConfigManager {
         cacheFile = new File(this.dataFolder, "/Data/cache.yml");
         inventoryFile = new File(this.dataFolder.getPath(), "/Data/inventories.yml");
         messagesFile = new File(getDataFolder(), "messages.yml");
-        worthFile = new File(getDataFolder(), "worth.yml");
         transactionFile = new File(getDataFolder(), "transaction.yml");
         shopsFolder = new File(this.dataFolder, "shops");
 
@@ -165,10 +161,6 @@ public final class ConfigManager {
             GUIShop.getINSTANCE().saveResource("messages.yml", false);
         }
 
-        if (!worthFile.exists()) {
-            GUIShop.getINSTANCE().saveResource("worth.yml", false);
-        }
-
         if (!transactionFile.exists()) {
             GUIShop.getINSTANCE().saveResource("transaction.yml", false);
         }
@@ -188,16 +180,14 @@ public final class ConfigManager {
             cacheConfig.load(cacheFile);
             inventoryConfig.load(inventoryFile);
             messagesConfig.load(messagesFile);
-            worthConfig.load(worthFile);
             transactionConfig.load(transactionFile);
-            
+
             // Load all shop configs from shops folder
             loadAllShopConfigs();
-            
+
             messageSystem.loadCustomMessages(messagesConfig);
             loadCache();
             loadDefaults();
-            loadWorthDefaults();
             initDictionary();
         } catch (IOException | InvalidConfigurationException e) {
             GUIShop.getINSTANCE().getLogUtil().log("Error Main config: " + e.getMessage());
@@ -466,19 +456,17 @@ public final class ConfigManager {
             menuConfig.load(menuFile);
             cacheConfig.load(cacheFile);
             messagesConfig.load(messagesFile);
-            worthConfig.load(worthFile);
             transactionConfig.load(transactionFile);
-            
+
             // Reload all shop configs from folder
             loadAllShopConfigs();
-            
+
             // Reload message system
             messageSystem.loadCustomMessages(messagesConfig);
-            
+
             // Reload all default values from configs
             loadDefaults();
-            loadWorthDefaults();
-            
+
             GUIShop.getINSTANCE().getLogUtil().debugLog("All configs reloaded successfully.");
         } catch (IOException | InvalidConfigurationException e) {
             GUIShop.getINSTANCE().getLogUtil().log("Error loading config: " + e.getMessage());
@@ -537,13 +525,6 @@ public final class ConfigManager {
             BUY_COMMANDS.add(mainConfig.getString("buy-commands"));
         }
 
-        // All sell commands
-        if (mainConfig.get("sell-commands") instanceof List) {
-            SELL_COMMANDS.addAll(mainConfig.getStringList("sell-commands"));
-        } else {
-            SELL_COMMANDS.add(mainConfig.getString("sell-commands"));
-        }
-
         // The command mode GUIShop should use
         Config.setCommandsMode(CommandsMode.parseFromConfig(mainConfig.getString("commands-mode", "REGISTER")));
 
@@ -585,69 +566,23 @@ public final class ConfigManager {
         Config.getTitlesConfig().setShopTitle(ChatColor.translateAlternateColorCodes('&',
                 mainConfig.getString("titles.shop", "Menu &f> &r%shopname%")));
 
-        // Sell title
-        Config.getTitlesConfig().setSellTitle(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("titles.sell", "Menu &f> &rSell")));
-
-        // Alternate sell title
-        Config.getAltSellConfig().setTitle(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("titles.alt-sell", "Menu &f> &rSell")));
-
         // Quantity title
         Config.getTitlesConfig().setQtyTitle(ChatColor.translateAlternateColorCodes('&',
                 Objects.requireNonNull(mainConfig.getString("titles.qty", "&4Select amount"))));
-
-        // Value title
-        Config.getTitlesConfig().setValueTitle(ChatColor.translateAlternateColorCodes('&',
-                Objects.requireNonNull(mainConfig.getString("titles.value", "&2Item values"))));
 
         // Transaction GUI titles
         Config.getTitlesConfig().setTransactionTitle(
                 mainConfig.getString("titles.transaction", "&8%item%"));
         Config.getTitlesConfig().setTransactionBuyButton(
                 mainConfig.getString("titles.transaction-buy-button", "&a&lBuy %amount%"));
-        Config.getTitlesConfig().setTransactionSellButton(
-                mainConfig.getString("titles.transaction-sell-button", "&c&lSell %amount%"));
         Config.getTitlesConfig().setTransactionBuyLore(
                 mainConfig.getString("titles.transaction-buy-lore", "&7Click to buy %amount% for %price%"));
-        Config.getTitlesConfig().setTransactionSellLore(
-                mainConfig.getString("titles.transaction-sell-lore", "&7Click to sell %amount% for %price%"));
-        Config.getTitlesConfig().setTransactionNotSellable(
-                mainConfig.getString("titles.transaction-not-sellable", "&c&lItem Not Sellable"));
         Config.getTitlesConfig().setTransactionNotBuyable(
                 mainConfig.getString("titles.transaction-not-buyable", "&c&lItem Not Buyable"));
         Config.getTitlesConfig().setTransactionBalanceTitle(
                 mainConfig.getString("titles.transaction-balance-title", "&6&l%player%"));
         Config.getTitlesConfig().setTransactionBalanceLore(
                 mainConfig.getString("titles.transaction-balance-lore", "&7Balance: &a%balance%"));
-
-        // The material for the indicator
-        Config.getAltSellConfig().setIndicatorMaterial(mainConfig.getString("alt-sell.indicator-material", "EMERALD"));
-
-        // Alternate sell add item material
-        Config.getAltSellConfig().setAddMaterial(mainConfig.getString("alt-sell.add-material", "GREEN_STAINED_GLASS_PANE"));
-
-        // Alternate sell remove item material
-        Config.getAltSellConfig().setRemoveMaterial(mainConfig.getString("alt-sell.remove-material", "RED_STAINED_GLASS_PANE"));
-
-        // Alternate sell quantities
-        Config.getAltSellConfig().setQuantity1(mainConfig.getInt("alt-sell.quantity-1", 1));
-        Config.getAltSellConfig().setQuantity2(mainConfig.getInt("alt-sell.quantity-2", 10));
-        Config.getAltSellConfig().setQuantity3(mainConfig.getInt("alt-sell.quantity-3", 64));
-
-        // Alternate sell confirm item material
-        Config.getAltSellConfig().setConfirmMaterial(mainConfig.getString("alt-sell.confirm-material", "EMERALD_BLOCK"));
-
-        // Alternate sell cancel item material
-        Config.getAltSellConfig().setCancelMaterial(mainConfig.getString("alt-sell.cancel-material", "REDSTONE_BLOCK"));
-
-        // Alternate sell confirm item display name
-        Config.getAltSellConfig().setConfirmName(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("alt-sell.confirm-name", "&a&lConfirm")));
-
-        // Alternate sell cancel item display name
-        Config.getAltSellConfig().setCancelName(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("alt-sell.cancel-name", "&c&lCancel")));
 
         // Load dynamic pricing enabled status from dynamicpricing.yml (not config.yml)
         File dynamicPricingFile = new File(GUIShop.getINSTANCE().getDataFolder(), "dynamicpricing.yml");
@@ -674,14 +609,6 @@ public final class ConfigManager {
                 GUIShop.getINSTANCE().initBuiltInDynamicPricing();
             }
         }
-
-        // Increase item display name
-        Config.getAltSellConfig().setIncreaseTitle(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("alt-sell.increase-title", "&aIncrease quantity by %amount%")));
-
-        // Decrease item display name
-        Config.getAltSellConfig().setDecreaseTitle(ChatColor.translateAlternateColorCodes('&',
-                mainConfig.getString("alt-sell.decrease-title", "&aDecrease quantity by %amount%")));
 
         // If the transaction logging to the console should be enabled
         Config.setTransactionLog(mainConfig.getBoolean("transaction-log", false));
@@ -782,125 +709,6 @@ public final class ConfigManager {
             Files.copy(source, Paths.get(destination), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             GUIShop.getINSTANCE().getLogUtil().log("Error extracting Dictionary files: " + ex.getMessage());
-        }
-    }
-
-    /**
-     * Load worth display configuration from worth.yml
-     */
-    public void loadWorthDefaults() {
-        if (worthConfig == null) {
-            GUIShop.getINSTANCE().getLogUtil().debugLog("Worth config is null, skipping worth defaults.");
-            return;
-        }
-
-        // Enable/disable worth display
-        WorthConfig.setEnabled(worthConfig.getBoolean("enabled", true));
-
-        // The format for the worth line
-        WorthConfig.setFormat(worthConfig.getString("format", "&7Worth: &a%worth%"));
-
-        // Position: TOP or BOTTOM
-        WorthConfig.setPosition(worthConfig.getString("position", "BOTTOM"));
-
-        // Add blank line before worth
-        WorthConfig.setAddBlankLine(worthConfig.getBoolean("add-blank-line", true));
-
-        // Only show worth for sellable items
-        WorthConfig.setOnlyShowSellable(worthConfig.getBoolean("only-show-sellable", true));
-
-        // Format for non-sellable items
-        WorthConfig.setNotSellableFormat(worthConfig.getString("not-sellable-format", "&7Worth: &cNot sellable"));
-
-        // Ignore list for lore containing certain strings
-        WorthConfig.setIgnoreLoreContaining(worthConfig.getStringList("ignore-lore-containing"));
-
-        // Blacklisted inventory titles
-        WorthConfig.setBlacklistedInventories(worthConfig.getStringList("blacklisted-inventories"));
-
-        // Blacklisted item names (partial match)
-        WorthConfig.setBlacklistedItemNames(worthConfig.getStringList("blacklisted-item-names"));
-
-        // Player inventory only mode
-        WorthConfig.setPlayerInventoryOnly(worthConfig.getBoolean("player-inventory-only", false));
-
-        // Hide armor slots
-        WorthConfig.setHideArmorSlots(worthConfig.getBoolean("hide-armor-slots", true));
-
-        // Debug mode for worth system
-        WorthConfig.setDebug(worthConfig.getBoolean("debug", false));
-        
-        // Auto-add GUIShop inventory titles to the blacklist
-        autoBlacklistGuiShopInventories();
-
-        GUIShop.getINSTANCE().getLogUtil().debugLog("Worth config loaded. Enabled: " + WorthConfig.isEnabled());
-    }
-    
-    /**
-     * Automatically adds all GUIShop inventory titles to the worth display blacklist.
-     * This ensures worth lore is never shown inside GUIShop menus, shops, transaction GUIs, etc.
-     */
-    private void autoBlacklistGuiShopInventories() {
-        List<String> blacklist = new ArrayList<>(WorthConfig.getBlacklistedInventories());
-        int initialSize = blacklist.size();
-        
-        // Get titles from TitlesConfig
-        com.pablo67340.guishop.config.TitlesConfig titles = Config.getTitlesConfig();
-        if (titles != null) {
-            // Add all GUIShop inventory titles (strip color codes for matching)
-            addToBlacklistIfNotPresent(blacklist, titles.getMenuTitle());
-            addToBlacklistIfNotPresent(blacklist, titles.getShopTitle());
-            addToBlacklistIfNotPresent(blacklist, titles.getSellTitle());
-            addToBlacklistIfNotPresent(blacklist, titles.getQtyTitle());
-            addToBlacklistIfNotPresent(blacklist, titles.getTransactionTitle());
-            addToBlacklistIfNotPresent(blacklist, titles.getValueTitle());
-        }
-        
-        // Also add the editor prefix to catch all editor mode inventories
-        addToBlacklistIfNotPresent(blacklist, "[Editor]");
-        
-        // Add alt-sell title from config if it exists
-        String altSellTitle = Config.getAltSellConfig() != null ? Config.getAltSellConfig().getTitle() : null;
-        if (altSellTitle != null) {
-            addToBlacklistIfNotPresent(blacklist, altSellTitle);
-        }
-        
-        WorthConfig.setBlacklistedInventories(blacklist);
-        
-        int added = blacklist.size() - initialSize;
-        if (added > 0) {
-            GUIShop.getINSTANCE().getLogUtil().debugLog("Auto-added " + added + " GUIShop inventory titles to worth display blacklist");
-        }
-    }
-    
-    /**
-     * Adds a title to the blacklist if it's not already present.
-     * Strips color codes and removes placeholder patterns for cleaner matching.
-     */
-    private void addToBlacklistIfNotPresent(List<String> blacklist, String title) {
-        if (title == null || title.isEmpty()) return;
-        
-        // Strip color codes and common placeholders for base matching
-        String strippedBase = org.bukkit.ChatColor.stripColor(
-            org.bukkit.ChatColor.translateAlternateColorCodes('&', title));
-        
-        // Remove common placeholders that vary at runtime
-        final String stripped = strippedBase.replaceAll("%[a-zA-Z_]+%", "").trim();
-        
-        // Only add if there's something meaningful left and not already present
-        if (!stripped.isEmpty() && stripped.length() >= 3) {
-            boolean alreadyExists = blacklist.stream()
-                .anyMatch(existing -> {
-                    String existingStripped = org.bukkit.ChatColor.stripColor(
-                        org.bukkit.ChatColor.translateAlternateColorCodes('&', existing));
-                    return existingStripped.equalsIgnoreCase(stripped) 
-                        || stripped.contains(existingStripped) 
-                        || existingStripped.contains(stripped);
-                });
-            
-            if (!alreadyExists) {
-                blacklist.add(stripped);
-            }
         }
     }
 

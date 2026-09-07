@@ -37,8 +37,8 @@ import com.pablo67340.guishop.util.NameUtil;
 import org.bukkit.event.inventory.ClickType;
 
 /**
- * Transaction GUI for buying and selling items.
- * Shows the item in the center with sell buttons on the left and buy buttons on the right.
+ * Transaction GUI for buying items.
+ * Shows the item in the center with buy buttons on the right.
  */
 public class TransactionGui {
 
@@ -73,7 +73,6 @@ public class TransactionGui {
 
     // Dynamic slot positions loaded from config
     private int guiRows = 3;
-    private int sellSlot1 = -1, sellSlot2 = -1, sellSlot3 = -1;
     private int buySlot1 = -1, buySlot2 = -1, buySlot3 = -1;
     private int itemDisplaySlot = -1;
     private int playerHeadSlot = -1;
@@ -127,14 +126,13 @@ public class TransactionGui {
         org.bukkit.configuration.ConfigurationSection layout = config.getConfigurationSection("layout");
         if (layout == null) {
             // Use defaults if no layout configured
-            sellSlot3 = 10; sellSlot2 = 11; sellSlot1 = 12;
             itemDisplaySlot = 13;
             buySlot1 = 14; buySlot2 = 15; buySlot3 = 16;
             playerHeadSlot = 18;
             backButtonSlot = 26;
             return;
         }
-        
+
         for (String slotKey : layout.getKeys(false)) {
             int slot;
             try {
@@ -142,16 +140,13 @@ public class TransactionGui {
             } catch (NumberFormatException e) {
                 continue;
             }
-            
+
             String type = layout.getString(slotKey + ".type", "DUMMY");
             switch (type.toUpperCase()) {
                 case "ITEM_DISPLAY" -> itemDisplaySlot = slot;
                 case "BUY_1" -> buySlot1 = slot;
                 case "BUY_2" -> buySlot2 = slot;
                 case "BUY_3" -> buySlot3 = slot;
-                case "SELL_1" -> sellSlot1 = slot;
-                case "SELL_2" -> sellSlot2 = slot;
-                case "SELL_3" -> sellSlot3 = slot;
                 case "BACK" -> backButtonSlot = slot;
                 case "PLAYER_HEAD" -> playerHeadSlot = slot;
             }
@@ -202,13 +197,6 @@ public class TransactionGui {
         if (itemDisplaySlot >= 0) {
             ItemStack displayItem = createDisplayItem();
             GUI.setItem(itemDisplaySlot, displayItem);
-        }
-        
-        // Create sell buttons (left side) or "not sellable" indicator
-        if (item.hasSellPrice()) {
-            createSellButtons();
-        } else {
-            createNotSellableIndicator();
         }
         
         // Create buy buttons (right side) or "not buyable" indicator
@@ -278,7 +266,7 @@ public class TransactionGui {
     }
 
     /**
-     * Creates the center display item with buy/sell price lore.
+     * Creates the center display item with buy price lore.
      */
     private ItemStack createDisplayItem() {
         ItemStack itemStack = XMaterial.matchXMaterial(item.getMaterial()).get().parseItem();
@@ -301,9 +289,7 @@ public class TransactionGui {
         
         // Add buy price lore
         lore.add(item.getBuyLore(1));
-        // Add sell price lore
-        lore.add(item.getSellLore(1));
-        
+
         // Add custom shop lore if exists
         if (item.hasShopLore()) {
             item.getShopLore().forEach(str -> {
@@ -369,54 +355,6 @@ public class TransactionGui {
     }
 
     /**
-     * Creates the sell buttons using configured material.
-     */
-    private void createSellButtons() {
-        // Load button display config from transaction.yml
-        org.bukkit.configuration.file.FileConfiguration transConfig = 
-            GUIShop.getINSTANCE().getConfigManager().getTransactionConfig();
-        String buttonName = transConfig.getString("buttons.sell.name", 
-            Config.getTitlesConfig().getTransactionSellButton());
-        List<String> buttonLoreTemplate = transConfig.getStringList("buttons.sell.lore");
-        if (buttonLoreTemplate.isEmpty()) {
-            buttonLoreTemplate = List.of(Config.getTitlesConfig().getTransactionSellLore());
-        }
-        
-        int[] sellSlots = {sellSlot1, sellSlot2, sellSlot3};
-        int[] quantities = getQuantities();
-        
-        for (int i = 0; i < quantities.length; i++) {
-            int slot = sellSlots[i];
-            if (slot < 0) continue; // Skip if slot not configured
-            
-            int quantity = quantities[i];
-            ItemStack sellButton = Config.getTransactionGuiConfig().getSellMaterial().parseItem();
-            sellButton.setAmount(Math.min(quantity, 64)); // Cap visual amount at 64
-            
-            ItemMeta meta = sellButton.getItemMeta();
-            String sellPrice = GUIShop.getINSTANCE().getConfigManager().getMessageSystem().translate("messages.currency-prefix")
-                + GUIShop.getINSTANCE().getMiscUtils().economyFormat(item.calculateSellPrice(quantity))
-                + GUIShop.getINSTANCE().getConfigManager().getMessageSystem().translate("messages.currency-suffix");
-            
-            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', 
-                buttonName.replace("%amount%", String.valueOf(quantity))));
-            
-            List<String> lore = new ArrayList<>();
-            for (String line : buttonLoreTemplate) {
-                lore.add(ChatColor.translateAlternateColorCodes('&', 
-                    line.replace("%amount%", String.valueOf(quantity))
-                        .replace("%price%", sellPrice)));
-            }
-            meta.setLore(lore);
-            
-            sellButton.setItemMeta(meta);
-            // Mark as GUI element to prevent worth display
-            PDCUtil.setString(sellButton, PDCUtil.KEY_GUI_ELEMENT, "true");
-            GUI.setItem(slot, sellButton);
-        }
-    }
-
-    /**
      * Creates the buy buttons using configured material.
      */
     private void createBuyButtons() {
@@ -462,37 +400,6 @@ public class TransactionGui {
             PDCUtil.setString(buyButton, PDCUtil.KEY_GUI_ELEMENT, "true");
             GUI.setItem(slot, buyButton);
         }
-    }
-
-    /**
-     * Creates an indicator showing the item is not sellable.
-     */
-    private void createNotSellableIndicator() {
-        // Load display config from transaction.yml
-        org.bukkit.configuration.file.FileConfiguration transConfig = 
-            GUIShop.getINSTANCE().getConfigManager().getTransactionConfig();
-        String indicatorName = transConfig.getString("buttons.not-sellable.name", 
-            Config.getTitlesConfig().getTransactionNotSellable());
-        List<String> indicatorLore = transConfig.getStringList("buttons.not-sellable.lore");
-        
-        ItemStack notSellable = Config.getTransactionGuiConfig().getNotSellableMaterial().parseItem();
-        ItemMeta meta = notSellable.getItemMeta();
-        meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', indicatorName));
-        if (!indicatorLore.isEmpty()) {
-            List<String> coloredLore = new ArrayList<>();
-            for (String line : indicatorLore) {
-                coloredLore.add(ChatColor.translateAlternateColorCodes('&', line));
-            }
-            meta.setLore(coloredLore);
-        }
-        notSellable.setItemMeta(meta);
-        // Mark as GUI element to prevent worth display
-        PDCUtil.setString(notSellable, PDCUtil.KEY_GUI_ELEMENT, "true");
-        
-        // Place in configured sell slots (use slot 2 as center preference)
-        if (sellSlot2 >= 0) GUI.setItem(sellSlot2, notSellable);
-        else if (sellSlot1 >= 0) GUI.setItem(sellSlot1, notSellable);
-        else if (sellSlot3 >= 0) GUI.setItem(sellSlot3, notSellable);
     }
 
     /**
@@ -598,20 +505,6 @@ public class TransactionGui {
             return;
         }
 
-        // Sell buttons
-        if (item.hasSellPrice()) {
-            if (slot == sellSlot1) {
-                sell(quantities[0]);
-                return;
-            } else if (slot == sellSlot2) {
-                sell(quantities[1]);
-                return;
-            } else if (slot == sellSlot3) {
-                sell(quantities[2]);
-                return;
-            }
-        }
-
         // Buy buttons
         if (item.hasBuyPrice()) {
             if (slot == buySlot1) {
@@ -642,74 +535,6 @@ public class TransactionGui {
                 currentShop.refreshDynamicPrices();
                 currentShop.openAtPage(player, returnPage);
             }, 1L);
-        }
-    }
-
-    /**
-     * Sells the specified quantity of items.
-     */
-    private void sell(int quantity) {
-        if (!GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.sell")) {
-            GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "no-permission");
-            return;
-        }
-
-        int amountRemoved = 0;
-        
-        // Find and remove matching items from player inventory
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length && amountRemoved < quantity; i++) {
-            ItemStack invItem = contents[i];
-            if (invItem == null || invItem.getType().isAir()) {
-                continue;
-            }
-            
-            if (item.isItemFromItemStack(invItem)) {
-                int canTake = Math.min(invItem.getAmount(), quantity - amountRemoved);
-                amountRemoved += canTake;
-                
-                if (canTake >= invItem.getAmount()) {
-                    player.getInventory().setItem(i, null);
-                } else {
-                    invItem.setAmount(invItem.getAmount() - canTake);
-                }
-            }
-        }
-        
-        if (amountRemoved > 0) {
-            BigDecimal moneyToGive = item.calculateSellPrice(amountRemoved);
-            Sell.roundAndGiveMoney(player, moneyToGive);
-            
-            // Update dynamic pricing
-            if (item.hasBuyPrice() && item.shouldUseDynamicPricing()) {
-                com.pablo67340.guishop.api.DynamicPriceProvider dynamicProvider = 
-                    GUIShop.getINSTANCE().getMiscUtils().getDYNAMICPRICING();
-                if (dynamicProvider != null) {
-                    dynamicProvider.sellItem(item.getItemString(), amountRemoved);
-                }
-            }
-            
-            // Track statistics
-            StatisticsManager statsManager = StatisticsManager.getInstance();
-            if (statsManager != null && statsManager.isAvailable()) {
-                statsManager.recordSale(player, item.getMaterial(), amountRemoved, moneyToGive);
-            }
-            
-            GUIShop.getINSTANCE().getLogUtil().transactionLog(
-                "Player " + player.getName() + " sold " + amountRemoved + " " + item.getMaterial() + 
-                " for " + moneyToGive.toPlainString());
-            
-            // Play sound
-            if (Config.isSoundEnabled()) {
-                try {
-                    player.playSound(player.getLocation(), XSound.matchXSound(Config.getSound()).get().parseSound(), 1, 1);
-                } catch (Exception ignored) {}
-            }
-            
-            // Refresh the GUI to update balance and prices (dynamic pricing)
-            refreshGui();
-        } else {
-            GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "alt-sell-not-enough", quantity);
         }
     }
 
@@ -820,21 +645,16 @@ public class TransactionGui {
     }
     
     /**
-     * Refreshes the buy/sell buttons to show updated dynamic prices.
+     * Refreshes the buy buttons to show updated dynamic prices.
      * Called after each transaction when dynamic pricing is enabled.
      */
     private void refreshPriceButtons() {
-        // Refresh sell buttons with new prices
-        if (item.hasSellPrice()) {
-            createSellButtons();
-        }
-        
         // Refresh buy buttons with new prices
         if (item.hasBuyPrice()) {
             createBuyButtons();
         }
         
-        // Also refresh the center display item as it shows buy/sell prices
+        // Also refresh the center display item as it shows the buy price
         if (itemDisplaySlot >= 0) {
             ItemStack displayItem = createDisplayItem();
             GUI.setItem(itemDisplaySlot, displayItem);

@@ -98,9 +98,6 @@ public class ItemActionHandler {
             case BUY_1 -> handleBuyAction(player, 0, context);
             case BUY_2 -> handleBuyAction(player, 1, context);
             case BUY_3 -> handleBuyAction(player, 2, context);
-            case SELL_1 -> handleSellAction(player, 0, context);
-            case SELL_2 -> handleSellAction(player, 1, context);
-            case SELL_3 -> handleSellAction(player, 2, context);
             case BACK -> handleBackAction(player, context);
             
             // Navigation/pagination types - these are typically handled by the GUI directly
@@ -253,16 +250,6 @@ public class ItemActionHandler {
     private static boolean handleBuyAction(Player player, int quantityIndex, ClickContext context) {
         // This is typically called from TransactionGui
         // The actual buy logic should be delegated to TransactionGui or ItemUtil
-        // For now, return false to let TransactionGui handle it
-        return false;
-    }
-    
-    /**
-     * Handle sell button actions.
-     */
-    private static boolean handleSellAction(Player player, int quantityIndex, ClickContext context) {
-        // This is typically called from TransactionGui
-        // The actual sell logic should be delegated to TransactionGui or ItemUtil
         // For now, return false to let TransactionGui handle it
         return false;
     }

@@ -8,7 +8,6 @@ import com.pablo67340.guishop.definition.MenuItem;
 import com.pablo67340.guishop.definition.MenuPage;
 import com.pablo67340.guishop.listenable.Menu;
 import com.pablo67340.guishop.listenable.PlayerListener;
-import com.pablo67340.guishop.listenable.Sell;
 import com.pablo67340.guishop.listenable.Shop;
 import com.pablo67340.guishop.gui.GuiListener;
 import com.pablo67340.guishop.economy.DynamicPricingManager;
@@ -27,7 +26,6 @@ import com.pablo67340.guishop.util.LogUtil;
 import com.pablo67340.guishop.util.MiscUtils;
 import com.pablo67340.guishop.util.RowChart;
 import com.pablo67340.guishop.util.SchedulerUtil;
-import com.pablo67340.guishop.worth.WorthDisplayManager;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -52,13 +50,6 @@ public final class GUIShop extends JavaPlugin {
      */
     @Getter
     public static final Set<String> BUY_COMMANDS = new HashSet<>();
-
-    /**
-     * A {@link Set} that will store every command that can be used by a
-     * {@link Player} to open the {@link Sell} GUI.
-     */
-    @Getter
-    public static final Set<String> SELL_COMMANDS = new HashSet<>();
 
     @Getter
     @Setter
@@ -108,10 +99,6 @@ public final class GUIShop extends JavaPlugin {
     @Setter
     public LogUtil logUtil;
 
-    @Getter
-    @Setter
-    private WorthDisplayManager worthDisplayManager;
-    
     /**
      * The statistics manager for tracking player shop transactions.
      */
@@ -169,15 +156,7 @@ public final class GUIShop extends JavaPlugin {
         getServer().getPluginCommand("guishop").setTabCompleter(new com.pablo67340.guishop.commands.GuishopTabCompleter());
         
         getServer().getPluginCommand("guishopuser").setExecutor(new UserCommand());
-        
-        // Register value command with tab completion
-        ValueCommand valueCommand = new ValueCommand();
-        getServer().getPluginCommand("value").setExecutor(valueCommand);
-        getServer().getPluginCommand("value").setTabCompleter(valueCommand);
 
-        // Initialize Worth Display System (requires PacketEvents)
-        initWorthDisplay();
-        
         // Initialize Statistics System
         initStatistics();
     }
@@ -194,7 +173,6 @@ public final class GUIShop extends JavaPlugin {
 
         // IMPORTANT: Reset static instances FIRST so getInstance() returns null
         // This prevents "connection closed" errors during plugin reload
-        WorthDisplayManager.resetInstance();
         StatisticsManager.resetInstance();
         DynamicPricingManager.resetInstance();
         EconomyManager.resetInstance();
@@ -207,12 +185,7 @@ public final class GUIShop extends JavaPlugin {
             placeholderExpansion.unregister();
             placeholderExpansion = null;
         }
-        
-        // Unregister worth display system
-        if (worthDisplayManager != null && worthDisplayManager.isRegistered()) {
-            worthDisplayManager.unregister();
-        }
-        
+
         // Shutdown statistics system
         if (statisticsManager != null) {
             statisticsManager.shutdown();
@@ -229,27 +202,6 @@ public final class GUIShop extends JavaPlugin {
         }
     }
 
-    /**
-     * Initialize the Worth Display system if ProtocolLib is available.
-     */
-    private void initWorthDisplay() {
-        if (getServer().getPluginManager().getPlugin("packetevents") == null) {
-            getLogUtil().log("PacketEvents not found - Worth display feature disabled.");
-            getLogUtil().log("Install PacketEvents to show item worth in lore.");
-            return;
-        }
-
-        try {
-            worthDisplayManager = new WorthDisplayManager(this);
-            worthDisplayManager.register();
-        } catch (Exception e) {
-            getLogUtil().log("Failed to initialize Worth Display: " + e.getMessage());
-            if (Config.isDebugMode()) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
     /**
      * Initialize the Statistics system and PlaceholderAPI expansion.
      */
@@ -525,19 +477,13 @@ public final class GUIShop extends JavaPlugin {
             String menuTitle = Config.getTitlesConfig().getMenuTitle().replace("%page-number%", "");
             String shopTitle = Config.getTitlesConfig().getShopTitle().replace("%shopname%", "");
             String qtyTitle = Config.getTitlesConfig().getQtyTitle();
-            String sellTitle = Config.getTitlesConfig().getSellTitle();
-            String altSellTitle = Config.getAltSellConfig().getTitle();
-            String valueTitle = Config.getTitlesConfig().getValueTitle();
-            
+
             Bukkit.getOnlinePlayers().stream().filter(player -> {
                 if (player.getOpenInventory() == null) return false;
                 String title = player.getOpenInventory().getTitle();
                 return title.contains(menuTitle)
                         || title.contains(shopTitle)
-                        || title.contains(qtyTitle)
-                        || title.contains(sellTitle)
-                        || title.contains(altSellTitle)
-                        || title.contains(valueTitle);
+                        || title.contains(qtyTitle);
             }).forEach(Player::closeInventory);
             getLogUtil().debugLog("Closed all GUIShop inventories");
         } catch (Exception e) {
@@ -545,19 +491,7 @@ public final class GUIShop extends JavaPlugin {
         }
 
         // ========== PHASE 2: Shutdown all singletons ==========
-        
-        // Shutdown worth display system
-        try {
-            if (worthDisplayManager != null && worthDisplayManager.isRegistered()) {
-                worthDisplayManager.unregister();
-            }
-            WorthDisplayManager.resetInstance();
-            worthDisplayManager = null;
-            getLogUtil().debugLog("Worth display manager shutdown");
-        } catch (Exception e) {
-            getLogUtil().log("[Warning] Error shutting down worth display: " + e.getMessage());
-        }
-        
+
         // Shutdown statistics system
         try {
             if (statisticsManager != null) {
@@ -622,7 +556,6 @@ public final class GUIShop extends JavaPlugin {
         // ========== PHASE 3: Clear all cached data ==========
         ITEMTABLE.clear();
         BUY_COMMANDS.clear();
-        SELL_COMMANDS.clear();
         loadedShops.clear();
         loadedMenu = null;
         ITEM_INFO_DEBUG.clear();
@@ -684,14 +617,6 @@ public final class GUIShop extends JavaPlugin {
             hadErrors = true;
         }
 
-        // Reinitialize worth display system
-        try {
-            initWorthDisplay();
-            getLogUtil().debugLog("Worth display reinitialized");
-        } catch (Exception e) {
-            getLogUtil().log("[Warning] Failed to reload worth display: " + e.getMessage());
-        }
-        
         // Reinitialize statistics system
         try {
             initStatistics();
