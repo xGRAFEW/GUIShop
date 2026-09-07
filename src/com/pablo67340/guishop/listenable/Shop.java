@@ -991,12 +991,21 @@ public class Shop {
         shopItem.getPages().get(pageKey).getItems().remove(Integer.toString(slot));
         FileConfiguration shopConfig = GUIShop.getINSTANCE().getConfigManager().getShopConfig(shop);
         if (shopConfig == null) return;
-        
+
         ConfigurationSection config = shopConfig.getConfigurationSection("pages." + pageKey + ".items") != null
                 ? shopConfig.getConfigurationSection("pages." + pageKey + ".items")
                 : shopConfig.createSection("pages." + pageKey + ".items");
         config.set(slot.toString(), null);
         GUIShop.getINSTANCE().getConfigManager().saveShopConfig(shop);
+
+        // Keep the PagedGui's own per-page cache in sync, otherwise a later
+        // GUI.loadCurrentPage() (page nav, dynamic pricing refresh) rebuilds
+        // the visible inventory from a stale snapshot and reintroduces the
+        // "deleted" item - which then gets wiped again on close, taking the
+        // rest of the page's untouched items down with it via saveCreatorInventory().
+        if (GUI != null) {
+            GUI.setItem(GUI.getCurrentPage(), slot, null);
+        }
     }
 
     public void editShopItem(ItemStack itemStack, Integer slot) {
@@ -1007,7 +1016,7 @@ public class Shop {
 
         FileConfiguration shopConfig = GUIShop.getINSTANCE().getConfigManager().getShopConfig(shop);
         if (shopConfig == null) return;
-        
+
         ConfigurationSection config = shopConfig.getConfigurationSection("pages." + pageKey + ".items") != null
                 ? shopConfig.getConfigurationSection("pages." + pageKey + ".items")
                 : shopConfig.createSection("pages." + pageKey + ".items");
@@ -1016,6 +1025,11 @@ public class Shop {
 
         GUIShop.getINSTANCE().getLogUtil().debugLog("Player edited item: " + item.getMaterial() + " slot: " + slot);
         GUIShop.getINSTANCE().getConfigManager().saveShopConfig(shop);
+
+        // Keep the PagedGui's own per-page cache in sync (see deleteShopItem).
+        if (GUI != null) {
+            GUI.setItem(GUI.getCurrentPage(), slot, itemStack);
+        }
 
         hasClicked = false;
     }

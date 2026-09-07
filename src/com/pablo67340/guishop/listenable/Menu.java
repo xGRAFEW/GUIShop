@@ -1090,6 +1090,16 @@ public final class Menu {
         } catch (IOException ex) {
             GUIShop.getINSTANCE().getLogUtil().debugLog("Error saving Shops: " + ex.getMessage());
         }
+
+        // Keep the PagedGui's own per-page cache in sync, otherwise a later
+        // GUI.loadCurrentPage() (page nav, dynamic pricing refresh) rebuilds
+        // the visible inventory from a stale snapshot and reintroduces the
+        // "deleted" item - which then gets wiped again on close, taking the
+        // rest of the page's untouched items down with it via saveCreatorInventory().
+        if (GUI != null) {
+            GUI.setItem(GUI.getCurrentPage(), slot, null);
+        }
+
         hasClicked = false;
     }
 
@@ -1125,6 +1135,12 @@ public final class Menu {
         } catch (IOException ex) {
             GUIShop.getINSTANCE().getLogUtil().debugLog("Error saving Shops: " + ex.getMessage());
         }
+
+        // Keep the PagedGui's own per-page cache in sync (see deleteMenuItem).
+        if (GUI != null) {
+            GUI.setItem(GUI.getCurrentPage(), slot, itemStack);
+        }
+
         hasClicked = false;
     }
 
