@@ -8,7 +8,7 @@
         <api.version>17</api.version>
         
         <mc.version.min>1.13</mc.version.min>
-        <mc.version.max>1.21.11</mc.version.max>
+        <mc.version.max>26.2</mc.version.max>
         <mc.version.range>${mc.version.min} - ${mc.version.max}</mc.version.range>
         <java.version.min>17</java.version.min>
         <supported.platforms>Paper/Spigot/Folia/Bukkit</supported.platforms>
@@ -17,7 +17,7 @@
     </properties>
     <groupId>com.pablo67340.GUIShop</groupId>
     <artifactId>GUIShop</artifactId>
-    <version>9.4.4</version>
+    <version>9.4.5</version>
     <name>GUIShop</name>
     <url>https://www.spigotmc.org/resources/guishop.2451/</url>
     <description>This plugin is the ultimate solution to all the signs, the chests, the glitches.</description>
@@ -117,7 +117,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.10-R0.1-SNAPSHOT</version>
+            <version>26.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -151,13 +151,19 @@
         <dependency>
             <groupId>com.github.retrooper</groupId>
             <artifactId>packetevents-spigot</artifactId>
-            <version>2.7.0</version>
+            <version>2.13.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.tcoded</groupId>
             <artifactId>FoliaLib</artifactId>
             <version>0.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
