@@ -219,7 +219,21 @@ public class Shop {
                     logShopError("Shop '" + shop + "' > " + pageKey + " > Slot '" + slotKey + "' returned null item. Check the item configuration.");
                     continue;
                 }
-                
+
+                // Older builds could save a generated navigation button into
+                // the shop as a real item, and leak its name onto the item that
+                // shares its slot. Drop both on load so shops written by those
+                // builds come back clean without the admin editing YAML.
+                if (isStrayNavigationButton(item)) {
+                    GUIShop.getINSTANCE().getLogUtil().log("[Shop Config] Shop '" + shop + "' > " + pageKey
+                            + " > Slot '" + slotKey + "': dropped a stray navigation button that had been saved as a shop item.");
+                    continue;
+                }
+                if (clearLeakedNavigationButtonName(item)) {
+                    GUIShop.getINSTANCE().getLogUtil().log("[Shop Config] Shop '" + shop + "' > " + pageKey
+                            + " > Slot '" + slotKey + "': cleared a navigation button name that had leaked onto this item.");
+                }
+
                 GUIShop.getINSTANCE().getLogUtil().debugLog("LOAD: Item " + item.getMaterial() + " at slot " + slotKey +
                     " type=" + item.getItemType() + " buyPrice=" + (item.hasBuyPrice() ? item.getBuyPriceAsDecimal() : "none"));
 
@@ -997,6 +1011,91 @@ public class Shop {
         }
     }
 
+    /**
+     * Whether an item is one GUIShop generates for the GUI itself (navigation
+     * arrows, page indicator, back button, player head) rather than a shop
+     * item. These are marked when they're built, which is more reliable than
+     * recomputing their slots - those move whenever the row count changes.
+     */
+    static boolean isGeneratedGuiElement(ItemStack itemStack) {
+        return itemStack != null && !itemStack.getType().isAir()
+                && "true".equals(PDCUtil.getString(itemStack, PDCUtil.KEY_GUI_ELEMENT));
+    }
+
+    /**
+     * The names the shipped shop templates give their navigation items. A shop
+     * item carrying one of these got it from a button, not from an admin.
+     */
+    private static final List<String> TEMPLATE_NAV_NAMES = List.of(
+            "Previous Page", "Next Page", "Back to Menu");
+
+    /**
+     * The display names of the buttons GUIShop generates, which should never
+     * appear on a shop item.
+     */
+    private static List<String> generatedButtonNames() {
+        List<String> names = new ArrayList<>(TEMPLATE_NAV_NAMES);
+        for (Item button : new Item[]{
+                Config.getButtonConfig().getForwardButton(),
+                Config.getButtonConfig().getBackwardButton(),
+                Config.getButtonConfig().getPageIndicatorButton()}) {
+            if (button == null) {
+                continue;
+            }
+            if (button.hasName()) {
+                names.add(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', button.getName())));
+            }
+            if (button.hasShopName()) {
+                names.add(ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', button.getShopName())));
+            }
+        }
+        return names;
+    }
+
+    private static boolean matchesGeneratedButtonName(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        String stripped = ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', name));
+        return generatedButtonNames().stream().anyMatch(stripped::equals);
+    }
+
+    /**
+     * A shop entry that is really one of the generated navigation buttons -
+     * same material and same name, with nothing a real shop item would have
+     * (no price, no commands, no target shop).
+     */
+    private static boolean isStrayNavigationButton(Item item) {
+        if (item.hasBuyPrice() || item.hasSellPrice() || item.hasCommands() || item.hasTargetShop()) {
+            return false;
+        }
+        if (item.getItemType() != ItemType.DUMMY) {
+            return false;
+        }
+        return matchesGeneratedButtonName(item.getName()) || matchesGeneratedButtonName(item.getShopName());
+    }
+
+    /**
+     * Strips a navigation button name that leaked onto a real shop item, so the
+     * item falls back to its own name again. Returns whether anything changed.
+     */
+    private static boolean clearLeakedNavigationButtonName(Item item) {
+        // A navigation item is supposed to carry one of these names.
+        if (item.getItemType().isNavigationType()) {
+            return false;
+        }
+        boolean changed = false;
+        if (matchesGeneratedButtonName(item.getShopName())) {
+            item.setShopName(null);
+            changed = true;
+        }
+        if (matchesGeneratedButtonName(item.getName())) {
+            item.setName(null);
+            changed = true;
+        }
+        return changed;
+    }
+
     private void deleteShopItem(Integer slot) {
         // YAML uses 1-indexed pages (Page1, Page2), but GUI uses 0-indexed
         String pageKey = "Page" + GUI.getCurrentPage();
@@ -1021,6 +1120,16 @@ public class Shop {
     }
 
     public void editShopItem(ItemStack itemStack, Integer slot) {
+        // Navigation buttons (page arrows, page indicator, back button, player
+        // head) aren't part of the shop's items - they're generated on every
+        // open and placed at slots derived from the row count. Saving one as a
+        // real item writes a stray entry into the shop and leaks its name onto
+        // whatever ends up in that slot, so never register one.
+        if (isGeneratedGuiElement(itemStack)) {
+            GUIShop.getINSTANCE().getLogUtil().debugLog("Ignoring navigation button placed at slot " + slot);
+            return;
+        }
+
         // YAML uses 1-indexed pages (Page1, Page2), but GUI uses 0-indexed
         String pageKey = "Page" + GUI.getCurrentPage();
         Item item = Item.parse(itemStack, slot, shop);
@@ -1110,10 +1219,18 @@ public class Shop {
                 if (slot == nextSlot || slot == prevSlot || slot == centerSlot || slot == backSlot || slot == playerHeadSlot) {
                     continue;
                 }
-                
+
                 ItemStack item = inventory.getItem(slot);
                 String slotKey = String.valueOf(slot);
-                
+
+                // The slot numbers above are recomputed from the current row
+                // count, which changes as items are added or removed, so a
+                // generated button can sit outside them. Go by the marker the
+                // buttons carry instead of trusting the arithmetic.
+                if (isGeneratedGuiElement(item)) {
+                    continue;
+                }
+
                 if (item == null || item.getType().isAir()) {
                     // Check if this slot has a BLANK item in the cache - don't delete those
                     ShopPage cachedPage = shopItem != null ? shopItem.getPages().get(pageKey) : null;

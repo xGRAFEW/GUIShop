@@ -1104,6 +1104,13 @@ public final class Menu {
     }
 
     public void editMenuItem(ItemStack itemStack, Integer slot) {
+        // Generated navigation buttons are not menu items - see
+        // Shop.isGeneratedGuiElement for why their slots can't be trusted.
+        if (Shop.isGeneratedGuiElement(itemStack)) {
+            GUIShop.getINSTANCE().getLogUtil().debugLog("Ignoring navigation button placed at menu slot " + slot);
+            return;
+        }
+
         // YAML and cache use 1-indexed pages (Page1, Page2), but GUI uses 0-indexed
         String pageKey = "Page" + GUI.getCurrentPage();
         Item item = Item.parse(itemStack, slot, null);
@@ -1336,9 +1343,15 @@ public final class Menu {
                 if (slot == nextSlot || slot == prevSlot || slot == centerSlot || slot == backSlot || slot == playerHeadSlot) {
                     continue;
                 }
-                
+
                 ItemStack item = inventory.getItem(slot);
                 String slotKey = String.valueOf(slot);
+
+                // Those slot numbers move with the row count, so also skip
+                // anything carrying the generated-GUI-element marker.
+                if (Shop.isGeneratedGuiElement(item)) {
+                    continue;
+                }
                 
                 if (item == null || item.getType().isAir()) {
                     // Check if this slot has a BLANK item in the cache - don't delete those
