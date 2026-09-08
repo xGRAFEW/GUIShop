@@ -13,7 +13,7 @@ folia-supported: true
 
 permissions:
   guishop.use:
-    default: op
+    default: true
     description: Grants access to GUIShop
   guishop.shop.*:
     default: op

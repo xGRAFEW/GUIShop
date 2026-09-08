@@ -269,6 +269,26 @@ public final class Item implements ConfigurationSerializable {
         }
     }
 
+    /**
+     * Whether an ItemStack already carries GUIShop's own {@code item_type} PDC
+     * marker - i.e. it's something {@link #toItemStack(Player, boolean)} itself
+     * rendered (a configured shop/menu item, possibly shown to an admin in
+     * creator mode with debug info and "[Editor: ...]"/"[Shift+Click=...]" hint
+     * lines baked into its lore), not a foreign item from a player's inventory
+     * or another plugin.
+     * <p>
+     * A raw-item snapshot is only meant to preserve real foreign identity
+     * (name/lore/model data/NBT this class doesn't otherwise model). An item
+     * that already has this marker has no such identity of its own - its
+     * current lore is just GUIShop's own reconstructable rendering - so it
+     * must never be (re)captured as a raw snapshot, and an existing snapshot
+     * that already carries this marker was captured by mistake and should be
+     * dropped rather than trusted.
+     */
+    private static boolean isGuiShopRendered(ItemStack itemStack) {
+        return itemStack != null && PDCUtil.getString(itemStack, PDCUtil.KEY_ITEM_TYPE) != null;
+    }
+
     private static final String SPAWNER_MATERIAL = XMaterial.SPAWNER.parseMaterial().name();
 
     /**
@@ -761,9 +781,13 @@ public final class Item implements ConfigurationSerializable {
             // Plain vanilla items skip this entirely and keep rebuilding from just
             // their material, exactly as before.
             String existingRawItem = PDCUtil.getString(itemStack, PDCUtil.KEY_RAW_ITEM);
-            if (existingRawItem != null) {
+            if (existingRawItem != null && !isGuiShopRendered(deserializeItemStack(existingRawItem))) {
                 item.setRawItem(existingRawItem);
-            } else if (!isPlainVanillaItem(itemStack)) {
+            } else if (existingRawItem == null && !isPlainVanillaItem(itemStack) && !isGuiShopRendered(itemStack)) {
+                // An item already carrying GUIShop's own item-type marker (but no
+                // snapshot yet) is one GUIShop rendered itself - most likely while
+                // this admin was viewing it in creator mode, whose debug/editor-hint
+                // lore must never be captured as if it were the item's real identity.
                 ItemStack snapshot = itemStack.clone();
                 snapshot.setAmount(1);
                 clearBlankDisplayName(snapshot);
@@ -935,7 +959,12 @@ public final class Item implements ConfigurationSerializable {
         // intact when placed in a shop.
         if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
             ItemStack rawBase = deserializeItemStack(getRawItem());
-            if (rawBase != null) {
+            // Heal snapshots taken before this was fixed: one that already
+            // carries GUIShop's own item-type marker was never real foreign
+            // identity - it's GUIShop's own creator-mode debug/editor-hint
+            // rendering, captured by mistake - so it must be dropped instead
+            // of used, falling back to a fresh item built from just the material.
+            if (rawBase != null && !isGuiShopRendered(rawBase)) {
                 // Heal snapshots taken before this was fixed, which may have
                 // frozen in GUIShop's own blank DUMMY name.
                 clearBlankDisplayName(rawBase);
@@ -1464,7 +1493,10 @@ public final class Item implements ConfigurationSerializable {
         // GUIShop's own special constructions below.
         if (hasRawItem() && !hasPotion() && !hasFirework() && !hasSkullUUID() && !isMobSpawner()) {
             ItemStack rawBase = deserializeItemStack(getRawItem());
-            if (rawBase != null) {
+            // See the matching heal in toItemStack(): a snapshot that already
+            // carries GUIShop's own item-type marker was captured by mistake
+            // (creator-mode debug/editor-hint lore), not real foreign identity.
+            if (rawBase != null && !isGuiShopRendered(rawBase)) {
                 // Heal snapshots taken before this was fixed, which may have
                 // frozen in GUIShop's own blank DUMMY name.
                 clearBlankDisplayName(rawBase);
