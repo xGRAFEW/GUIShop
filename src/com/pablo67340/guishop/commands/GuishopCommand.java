@@ -243,7 +243,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("n") || args[0].equalsIgnoreCase("name")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", Arrays.asList(args).subList(1, args.length - 1));
+                    String line = String.join(" ", Arrays.asList(args).subList(1, args.length));
 
                     if (args.length == 2) {
                         if (args[1].equalsIgnoreCase("false")) {
@@ -259,7 +259,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("bn") || args[0].equalsIgnoreCase("buyname")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                     if (args.length == 2) {
                         if (args[1].equalsIgnoreCase("false")) {
                             ItemUtil.setBuyName(false, player);
@@ -277,7 +277,7 @@ public class GuishopCommand implements CommandExecutor {
                     if (args[1].equalsIgnoreCase("false")) {
                         ItemUtil.setEnchantments(false, player);
                     } else {
-                        String enchantments = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                        String enchantments = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                         ItemUtil.setEnchantments(StringUtil.isBlank(enchantments) ? false : enchantments, player);
                     }
                 } else {
@@ -285,7 +285,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("asll") || args[0].equalsIgnoreCase("addshoploreline")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                     ItemUtil.addToShopLore(ChatColor.translateAlternateColorCodes('&', line.trim()), player);
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "add-shop-lore.usage");
@@ -314,7 +314,7 @@ public class GuishopCommand implements CommandExecutor {
                         return true;
                     }
 
-                    String line = String.join(" ", Arrays.asList(args).subList(2, args.length - 1));
+                    String line = String.join(" ", Arrays.asList(args).subList(2, args.length));
 
                     ItemUtil.editShopLore(slot, ChatColor.translateAlternateColorCodes('&', line.trim()),
                             player);
@@ -323,7 +323,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("all") || args[0].equalsIgnoreCase("addloreline")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                     ItemUtil.addToLore(ChatColor.translateAlternateColorCodes('&', line.trim()), player);
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "add-lore.usage");
@@ -352,7 +352,7 @@ public class GuishopCommand implements CommandExecutor {
                         return true;
                     }
 
-                    String line = String.join(" ", Arrays.asList(args).subList(2, args.length - 1));
+                    String line = String.join(" ", Arrays.asList(args).subList(2, args.length));
 
                     ItemUtil.editLore(slot, ChatColor.translateAlternateColorCodes('&', line.trim()),
                             player);
@@ -361,7 +361,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("abll") || args[0].equalsIgnoreCase("addbuyloreline")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                     ItemUtil.addToBuyLore(ChatColor.translateAlternateColorCodes('&', line.trim()), player);
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "add-buy-lore.usage");
@@ -377,7 +377,7 @@ public class GuishopCommand implements CommandExecutor {
                         return true;
                     }
 
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(2, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
                     ItemUtil.editBuyLore(slot, ChatColor.translateAlternateColorCodes('&', line.trim()), player);
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "edit-buy-lore.usage");
@@ -410,7 +410,7 @@ public class GuishopCommand implements CommandExecutor {
                 }
             } else if (args[0].equalsIgnoreCase("ac") || args[0].equalsIgnoreCase("addcommand")) {
                 if (args.length >= 2) {
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(1, args.length)));
                     ItemUtil.addCommand(ChatColor.translateAlternateColorCodes('&', line.trim()), player);
                 } else {
                     GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "add-command.usage");
@@ -425,7 +425,7 @@ public class GuishopCommand implements CommandExecutor {
                         GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "edit-command.invalid-number", args[1]);
                     }
 
-                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(2, args.length - 1)));
+                    String line = String.join(" ", new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
                     ItemUtil.editCommand(slot, ChatColor.translateAlternateColorCodes('&', line.trim()),
                             player);
                 } else {
