@@ -2,7 +2,6 @@ package com.pablo67340.guishop.api;
 
 import com.pablo67340.guishop.GUIShop;
 import com.pablo67340.guishop.definition.Item;
-import com.pablo67340.guishop.economy.EconomyManager;
 import com.pablo67340.guishop.statistics.PlayerStats;
 import com.pablo67340.guishop.statistics.StatisticsManager;
 import org.bukkit.OfflinePlayer;
@@ -345,91 +344,6 @@ public abstract class GUIShopAPI {
             return new LinkedHashMap<>();
         }
         return manager.getPlayerTopBoughtItems(uuid, limit);
-    }
-
-    // ==================== Internal Economy API ====================
-    
-    /**
-     * Check if GUIShop's internal economy is enabled and available.
-     * 
-     * @return true if internal economy is enabled and functional
-     */
-    public static boolean isInternalEconomyEnabled() {
-        EconomyManager manager = EconomyManager.getInstance();
-        return manager != null && manager.isAvailable();
-    }
-    
-    /**
-     * Get a player's balance using the internal economy.
-     * 
-     * @param player the player
-     * @return the player's balance, or BigDecimal.ZERO if not available
-     */
-    public static BigDecimal getInternalBalance(OfflinePlayer player) {
-        EconomyManager manager = EconomyManager.getInstance();
-        if (manager == null || !manager.isAvailable()) {
-            return BigDecimal.ZERO;
-        }
-        return manager.getBalance(player.getUniqueId());
-    }
-    
-    /**
-     * Set a player's balance using the internal economy.
-     * 
-     * @param player the player
-     * @param amount the new balance
-     * @return true if successful
-     */
-    public static boolean setInternalBalance(OfflinePlayer player, BigDecimal amount) {
-        EconomyManager manager = EconomyManager.getInstance();
-        if (manager == null || !manager.isAvailable()) {
-            return false;
-        }
-        return manager.setBalance(player.getUniqueId(), amount);
-    }
-    
-    /**
-     * Give money to a player using the internal economy.
-     * 
-     * @param player the player
-     * @param amount the amount to give
-     * @return true if successful
-     */
-    public static boolean giveInternalMoney(OfflinePlayer player, BigDecimal amount) {
-        EconomyManager manager = EconomyManager.getInstance();
-        if (manager == null || !manager.isAvailable()) {
-            return false;
-        }
-        return manager.deposit(player.getUniqueId(), amount);
-    }
-    
-    /**
-     * Take money from a player using the internal economy.
-     * 
-     * @param player the player
-     * @param amount the amount to take
-     * @return true if successful (player has sufficient funds)
-     */
-    public static boolean takeInternalMoney(OfflinePlayer player, BigDecimal amount) {
-        EconomyManager manager = EconomyManager.getInstance();
-        if (manager == null || !manager.isAvailable()) {
-            return false;
-        }
-        return manager.withdraw(player.getUniqueId(), amount);
-    }
-    
-    /**
-     * Format a balance using the internal economy's settings.
-     * 
-     * @param amount the amount to format
-     * @return formatted string (e.g., "$1,000.00" or "1.5M")
-     */
-    public static String formatInternalBalance(BigDecimal amount) {
-        EconomyManager manager = EconomyManager.getInstance();
-        if (manager == null || !manager.isAvailable()) {
-            return amount.toPlainString();
-        }
-        return manager.format(amount);
     }
 
     // ==================== Payment Notification Preferences ====================

@@ -735,7 +735,7 @@ public final class Menu {
      * @param player The player the GUI will display to
      */
     public void open(Player player) {
-        if (!GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.use") && !player.isOp()) {
+        if (!GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.use") && !player.isOp()) {
             GUIShop.getINSTANCE().getMiscUtils().sendPrefix(player, "no-permission");
             return;
         }
@@ -928,8 +928,8 @@ public final class Menu {
         // Check permission for target shop
         if (clickedItem.hasTargetShop()) {
             String shopName = clickedItem.getTargetShop();
-            if (!GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(clickingPlayer, "guishop.shop." + shopName.toLowerCase()) 
-                    && !GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(clickingPlayer, "guishop.shop.*")) {
+            if (!GUIShop.getINSTANCE().getMiscUtils().playerHas(clickingPlayer, "guishop.shop." + shopName.toLowerCase()) 
+                    && !GUIShop.getINSTANCE().getMiscUtils().playerHas(clickingPlayer, "guishop.shop.*")) {
                 GUIShop.getINSTANCE().getMiscUtils().sendPrefix(clickingPlayer, "no-permission");
                 return;
             }

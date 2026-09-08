@@ -222,9 +222,9 @@ public class ItemActionHandler {
         }
         
         // Check permission for the shop
-        boolean hasShopPerm = GUIShop.getINSTANCE().getMiscUtils().getPerms()
+        boolean hasShopPerm = GUIShop.getINSTANCE().getMiscUtils()
             .playerHas(player, "guishop.shop." + nearestShop.toLowerCase());
-        boolean hasWildcard = GUIShop.getINSTANCE().getMiscUtils().getPerms()
+        boolean hasWildcard = GUIShop.getINSTANCE().getMiscUtils()
             .playerHas(player, "guishop.shop.*");
         
         if (!hasShopPerm && !hasWildcard && !player.isOp()) {

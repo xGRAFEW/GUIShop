@@ -42,6 +42,21 @@ public class MiscUtils {
     @Getter
     private Permission perms;
 
+    /**
+     * Permission check that survives a server with no Vault permission provider.
+     * Falls back to Bukkit's own permission lookup when Vault has none registered.
+     */
+    public boolean playerHas(Player player, String permission) {
+        return (perms != null) ? perms.playerHas(player, permission) : player.hasPermission(permission);
+    }
+
+    /**
+     * @see #playerHas(Player, String)
+     */
+    public boolean has(org.bukkit.command.CommandSender sender, String permission) {
+        return (perms != null) ? perms.has(sender, permission) : sender.hasPermission(permission);
+    }
+
     public String placeholderIfy(String input, Player player, Item item) {
         String string = ChatColor.translateAlternateColorCodes('&', input);
 
@@ -261,14 +276,17 @@ public class MiscUtils {
         }
 
         RegisteredServiceProvider<Economy> rsp = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
-        RegisteredServiceProvider<Permission> rsp2 = Bukkit.getServer().getServicesManager().getRegistration(Permission.class);
 
-        if (rsp == null || rsp2 == null) {
+        if (rsp == null || rsp.getProvider() == null) {
             return false;
         }
 
         ECONOMY = rsp.getProvider();
-        perms = rsp2.getProvider();
+
+        // A permissions provider is optional - GUIShop only needs it for permission
+        // lookups, so a server without one must still be able to buy items.
+        RegisteredServiceProvider<Permission> rsp2 = Bukkit.getServer().getServicesManager().getRegistration(Permission.class);
+        perms = (rsp2 != null) ? rsp2.getProvider() : null;
 
         return true;
     }

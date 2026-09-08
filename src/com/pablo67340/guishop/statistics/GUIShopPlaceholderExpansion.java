@@ -1,8 +1,6 @@
 package com.pablo67340.guishop.statistics;
 
 import com.pablo67340.guishop.GUIShop;
-import com.pablo67340.guishop.economy.EconomyConfig;
-import com.pablo67340.guishop.economy.EconomyManager;
 import com.pablo67340.guishop.util.MathUtil;
 import com.pablo67340.guishop.util.NameUtil;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -89,39 +87,29 @@ public class GUIShopPlaceholderExpansion extends PlaceholderExpansion {
         
         UUID uuid = player.getUniqueId();
         
-        // Balance placeholders (uses singleton pattern - survives reloads)
+        // Balance placeholders - read from the server's Vault economy plugin.
         String lowerParams = params.toLowerCase();
         if (lowerParams.startsWith("balance")) {
-            EconomyManager ecoManager = EconomyManager.getInstance();
-            EconomyConfig ecoConfig = EconomyConfig.getInstance();
-            
-            if (ecoManager == null) {
-                plugin.getLogUtil().debugLog("Placeholder balance: EconomyManager is null");
-                return "$0";
+            net.milkbowl.vault.economy.Economy economy = plugin.getMiscUtils().getECONOMY();
+
+            if (economy == null) {
+                plugin.getLogUtil().debugLog("Placeholder balance: no Vault economy hooked");
+                return "0";
             }
-            if (!ecoManager.isAvailable()) {
-                plugin.getLogUtil().debugLog("Placeholder balance: EconomyManager not available");
-                return "$0";
-            }
-            if (ecoConfig == null) {
-                plugin.getLogUtil().debugLog("Placeholder balance: EconomyConfig is null");
-                return "$0";
-            }
-            
-            BigDecimal balance = ecoManager.getBalance(uuid);
+
+            BigDecimal balance = BigDecimal.valueOf(economy.getBalance(player));
             plugin.getLogUtil().debugLog("Placeholder balance for " + player.getName() + ": " + balance);
-            
+
             switch (lowerParams) {
-                case "balance":
-                    return ecoConfig.formatBalance(balance);
                 case "balance_raw":
                     return balance.toPlainString();
                 case "balance_formatted":
-                    return ecoConfig.getCurrencySymbol() + MathUtil.formatAbbreviated(balance);
+                    return MathUtil.formatAbbreviated(balance);
                 case "balance_commas":
-                    return ecoConfig.getCurrencySymbol() + MathUtil.formatWithCommas(balance);
+                    return MathUtil.formatWithCommas(balance);
+                case "balance":
                 default:
-                    return ecoConfig.formatBalance(balance);
+                    return economy.format(balance.doubleValue());
             }
         }
         

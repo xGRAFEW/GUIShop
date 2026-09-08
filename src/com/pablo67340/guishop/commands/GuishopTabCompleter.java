@@ -18,24 +18,18 @@ import java.util.List;
 public class GuishopTabCompleter implements TabCompleter {
 
     private static final List<String> BASE_COMMANDS = Arrays.asList(
-        "reload", "edit", "open", "parsemob", "iteminfo", "eco", "market", "help"
+        "reload", "edit", "open", "parsemob", "iteminfo", "market", "help"
     );
     
     private static final List<String> EDIT_TARGETS = Arrays.asList(
         "menu", "transaction"
     );
     
-    private static final List<String> ECO_SUBCOMMANDS = Arrays.asList(
-        "give", "take", "set", "balance", "reset", "help"
-    );
     
     private static final List<String> MARKET_SUBCOMMANDS = Arrays.asList(
         "status", "info", "reset", "resetall", "help"
     );
     
-    private static final List<String> AMOUNT_SUGGESTIONS = Arrays.asList(
-        "100", "500", "1k", "5k", "10k", "50k", "100k", "500k", "1m", "10m", "100m"
-    );
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, 
@@ -69,13 +63,6 @@ public class GuishopTabCompleter implements TabCompleter {
                         if (shop.toLowerCase().startsWith(partial)) {
                             completions.add(shop);
                         }
-                    }
-                }
-            } else if (subCommand.equals("eco") || subCommand.equals("economy")) {
-                // /gs eco <subcommand>
-                for (String ecoCmd : ECO_SUBCOMMANDS) {
-                    if (ecoCmd.startsWith(partial)) {
-                        completions.add(ecoCmd);
                     }
                 }
             } else if (subCommand.equals("market") || subCommand.equals("dp") || subCommand.equals("dynamicpricing")) {
@@ -114,15 +101,6 @@ public class GuishopTabCompleter implements TabCompleter {
                         completions.add(pageNum);
                     }
                 }
-            } else if (subCommand.equals("eco") || subCommand.equals("economy")) {
-                // /gs eco <subcommand> <player>
-                if (ECO_SUBCOMMANDS.contains(subSubCommand)) {
-                    for (Player player : Bukkit.getOnlinePlayers()) {
-                        if (player.getName().toLowerCase().startsWith(partial)) {
-                            completions.add(player.getName());
-                        }
-                    }
-                }
             } else if (subCommand.equals("open") || subCommand.equals("o")) {
                 // /gs open <player> <shop>
                 java.util.Set<String> shopNames = GUIShop.getINSTANCE().getConfigManager().getShopNames();
@@ -145,23 +123,8 @@ public class GuishopTabCompleter implements TabCompleter {
                     }
                 }
             }
-        } else if (args.length == 4) {
-            String subCommand = args[0].toLowerCase();
-            String subSubCommand = args[1].toLowerCase();
-            
-            if (subCommand.equals("eco") || subCommand.equals("economy")) {
-                // /gs eco give/take/set <player> <amount>
-                if (subSubCommand.equals("give") || subSubCommand.equals("take") || subSubCommand.equals("set")) {
-                    String partial = args[3].toLowerCase();
-                    for (String amount : AMOUNT_SUGGESTIONS) {
-                        if (amount.startsWith(partial)) {
-                            completions.add(amount);
-                        }
-                    }
-                }
-            }
         }
-        
+
         return completions;
     }
 }

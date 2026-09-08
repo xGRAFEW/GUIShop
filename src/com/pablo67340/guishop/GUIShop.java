@@ -11,16 +11,9 @@ import com.pablo67340.guishop.listenable.PlayerListener;
 import com.pablo67340.guishop.listenable.Shop;
 import com.pablo67340.guishop.gui.GuiListener;
 import com.pablo67340.guishop.economy.DynamicPricingManager;
-import com.pablo67340.guishop.economy.EconomyCommands;
-import com.pablo67340.guishop.economy.EconomyConfig;
-import com.pablo67340.guishop.economy.EconomyManager;
-import com.pablo67340.guishop.economy.GUIShopEconomy;
 import com.pablo67340.guishop.listenable.editor.ChatInputHandler;
 import com.pablo67340.guishop.statistics.GUIShopPlaceholderExpansion;
 import com.pablo67340.guishop.statistics.StatisticsManager;
-import net.milkbowl.vault.economy.Economy;
-import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.ServicePriority;
 import com.pablo67340.guishop.util.ConfigManager;
 import com.pablo67340.guishop.util.LogUtil;
 import com.pablo67340.guishop.util.MiscUtils;
@@ -104,18 +97,6 @@ public final class GUIShop extends JavaPlugin {
      */
     @Getter
     private StatisticsManager statisticsManager;
-    
-    /**
-     * The economy manager for the internal economy system.
-     */
-    @Getter
-    private EconomyManager economyManager;
-    
-    /**
-     * The economy config for the internal economy system.
-     */
-    @Getter
-    private EconomyConfig economyConfig;
 
     /**
      * The scheduled task for log flushing, used to cancel on disable.
@@ -138,15 +119,11 @@ public final class GUIShop extends JavaPlugin {
 
         warmup();
         initWriteCache();
-        
-        // Initialize internal economy (if enabled) before checking for economy plugins
-        initInternalEconomy();
 
-        if (!getMiscUtils().setupEconomy()) {
-            getLogUtil().log("Vault could not detect an economy plugin!");
-            setNoEconomySystem(true);
-            return;
-        }
+        // Hook into whatever economy plugin is registered with Vault. Economy plugins
+        // that enable after GUIShop (CMI, for example) are picked up by the retry below,
+        // so the rest of the plugin is always registered regardless of load order.
+        resolveEconomy(true);
 
         getServer().getPluginManager().registerEvents(PlayerListener.INSTANCE, this);
         getServer().getPluginManager().registerEvents(GuiListener.getInstance(), this);
@@ -175,8 +152,6 @@ public final class GUIShop extends JavaPlugin {
         // This prevents "connection closed" errors during plugin reload
         StatisticsManager.resetInstance();
         DynamicPricingManager.resetInstance();
-        EconomyManager.resetInstance();
-        EconomyConfig.resetInstance();
         GuiListener.resetInstance();
         ChatInputHandler.resetInstance();
 
@@ -194,11 +169,6 @@ public final class GUIShop extends JavaPlugin {
         // Shutdown built-in dynamic pricing system
         if (dynamicPricingManager != null) {
             dynamicPricingManager.shutdown();
-        }
-        
-        // Shutdown internal economy system
-        if (economyManager != null) {
-            economyManager.shutdown();
         }
     }
 
@@ -234,152 +204,67 @@ public final class GUIShop extends JavaPlugin {
             }
         }
     }
-    
+
     /**
-     * Initialize the internal economy system if enabled in economy.yml.
+     * Number of times {@link #resolveEconomy(boolean)} has already retried.
      */
-    private void initInternalEconomy() {
-        try {
-            // Load economy config
-            economyConfig = new EconomyConfig(this);
-            economyConfig.load();
-            
-            // Check if internal economy is enabled
-            if (!economyConfig.isEnabled()) {
-                getLogUtil().log("Internal economy is disabled. Using external economy plugin.");
-                return;
-            }
-            
-            // Check if Vault is available
-            if (getServer().getPluginManager().getPlugin("Vault") == null) {
-                getLogUtil().log("Vault not found. Internal economy cannot be registered.");
-                return;
-            }
-            
-            // Check if another economy plugin is already registered
-            RegisteredServiceProvider<Economy> existingEconomy = getServer().getServicesManager().getRegistration(Economy.class);
-            if (existingEconomy != null) {
-                String existingPlugin = existingEconomy.getPlugin().getName();
-                getLogUtil().log("=========================================");
-                getLogUtil().log("NOTICE: Another economy plugin detected!");
-                getLogUtil().log("Detected: " + existingPlugin);
-                getLogUtil().log("");
-                getLogUtil().log("GUIShop's internal economy is currently ENABLED");
-                getLogUtil().log("and will override " + existingPlugin + ".");
-                getLogUtil().log("");
-                getLogUtil().log("To use " + existingPlugin + " instead:");
-                getLogUtil().log("  1. Open plugins/GUIShop/economy.yml");
-                getLogUtil().log("  2. Set 'enabled: false'");
-                getLogUtil().log("  3. Restart the server");
-                getLogUtil().log("=========================================");
-            }
-            
-            // Initialize economy manager
-            economyManager = new EconomyManager(this);
-            if (!economyManager.initialize()) {
-                getLogUtil().log("Failed to initialize internal economy database.");
-                economyManager = null;
-                return;
-            }
-            
-            // Register with Vault
-            GUIShopEconomy vaultEconomy = new GUIShopEconomy(this);
-            getServer().getServicesManager().register(
-                Economy.class, 
-                vaultEconomy, 
-                this, 
-                ServicePriority.High
-            );
-            
-            getLogUtil().log("Internal economy enabled and registered with Vault.");
-            getLogUtil().log("Currency: " + economyConfig.getCurrencySymbol() + " (" + economyConfig.getCurrencyName() + ")");
-            getLogUtil().log("Starting balance: " + economyConfig.formatBalance(economyConfig.getStartingBalance()));
-            
-            // Register economy commands dynamically (/bal, /pay, /togglepay)
-            // These are only registered when internal economy is enabled
-            registerEconomyCommands();
-            
-            // Load balances for all currently online players (important for PlugMan reloads)
-            int loadedCount = 0;
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                economyManager.loadPlayerCache(player);
-                loadedCount++;
-            }
-            if (loadedCount > 0) {
-                getLogUtil().log("Loaded economy cache for " + loadedCount + " online player(s).");
-            }
-            
-        } catch (Exception e) {
-            getLogUtil().log("Failed to initialize internal economy: " + e.getMessage());
-            if (Config.isDebugMode()) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
+    private int economyRetries = 0;
+
     /**
-     * Dynamically registers economy commands (/bal, /pay, /togglepay).
-     * These are only registered when internal economy is enabled to avoid
-     * conflicting with other economy plugins' commands.
+     * Name of the economy plugin currently hooked, used to log a change only once.
      */
-    private void registerEconomyCommands() {
-        try {
-            EconomyCommands ecoCommands = new EconomyCommands(this);
-            
-            // Get the command map via reflection
-            java.lang.reflect.Field commandMapField = Bukkit.getServer().getClass().getDeclaredField("commandMap");
-            commandMapField.setAccessible(true);
-            org.bukkit.command.CommandMap commandMap = (org.bukkit.command.CommandMap) commandMapField.get(Bukkit.getServer());
-            
-            // Register /bal command with aliases
-            org.bukkit.command.Command balCommand = new org.bukkit.command.Command("bal", 
-                    "Check your balance (internal economy)", 
-                    "/bal [player]", 
-                    java.util.Arrays.asList("balance", "money")) {
-                @Override
-                public boolean execute(org.bukkit.command.CommandSender sender, String label, String[] args) {
-                    return ecoCommands.onCommand(sender, this, label, args);
-                }
-            };
-            balCommand.setPermission("guishop.economy.balance");
-            commandMap.register("guishop", balCommand);
-            
-            // Register /pay command with aliases
-            org.bukkit.command.Command payCommand = new org.bukkit.command.Command("pay", 
-                    "Send money to another player (internal economy)", 
-                    "/pay <player> <amount>", 
-                    java.util.Arrays.asList("send")) {
-                @Override
-                public boolean execute(org.bukkit.command.CommandSender sender, String label, String[] args) {
-                    return ecoCommands.onCommand(sender, this, label, args);
-                }
-            };
-            payCommand.setPermission("guishop.economy.pay");
-            commandMap.register("guishop", payCommand);
-            
-            // Register /togglepay command with aliases
-            org.bukkit.command.Command togglePayCommand = new org.bukkit.command.Command("togglepay", 
-                    "Toggle payment notifications on/off", 
-                    "/togglepay", 
-                    java.util.Arrays.asList("paytoggle")) {
-                @Override
-                public boolean execute(org.bukkit.command.CommandSender sender, String label, String[] args) {
-                    return ecoCommands.onCommand(sender, this, label, args);
-                }
-            };
-            togglePayCommand.setPermission("guishop.economy.pay");
-            commandMap.register("guishop", togglePayCommand);
-            
-            getLogUtil().log("Economy commands registered: /bal, /balance, /money, /pay, /send, /togglepay");
-            
-        } catch (Exception e) {
-            getLogUtil().log("Failed to register economy commands: " + e.getMessage());
-            if (Config.isDebugMode()) {
-                e.printStackTrace();
+    private String hookedEconomyName = null;
+
+    /**
+     * How many times to retry hooking Vault's economy before giving up.
+     * Economy plugins such as CMI enable well after GUIShop, so the first
+     * attempt during onEnable() usually finds nothing.
+     */
+    private static final int MAX_ECONOMY_RETRIES = 40;
+
+    /**
+     * Hooks into the economy plugin registered with Vault.
+     * <p>
+     * GUIShop has no economy of its own — it always spends the balance owned by whatever
+     * economy plugin is registered with Vault (CMI, EssentialsX, ...). Because Bukkit may
+     * enable GUIShop before that plugin, a failed lookup is not fatal: the lookup is simply
+     * retried on a delay until an economy shows up.
+     *
+     * @param scheduleRetry whether to schedule another attempt when no economy is found yet.
+     */
+    public void resolveEconomy(boolean scheduleRetry) {
+        if (getMiscUtils().setupEconomy()) {
+            String name = String.valueOf(getMiscUtils().getECONOMY().getName());
+            if (!name.equals(hookedEconomyName)) {
+                getLogUtil().log("Economy hooked: " + name + " (via Vault)");
+                hookedEconomyName = name;
             }
+            setNoEconomySystem(false);
+            economyRetries = 0;
+            return;
         }
+
+        hookedEconomyName = null;
+        setNoEconomySystem(true);
+
+        if (!scheduleRetry) {
+            return;
+        }
+
+        if (economyRetries == 0) {
+            getLogUtil().log("No Vault economy registered yet - waiting for an economy plugin to enable...");
+        }
+
+        if (economyRetries++ >= MAX_ECONOMY_RETRIES) {
+            getLogUtil().log("Vault could not detect an economy plugin! Buying is disabled until one is installed.");
+            return;
+        }
+
+        // 20 ticks: economy plugins normally register during their own onEnable, so this
+        // resolves on the first retry in practice.
+        SchedulerUtil.runTaskLater(() -> resolveEconomy(true), 20L);
     }
-    
+
     @Getter
     private com.pablo67340.guishop.economy.DynamicPricingManager dynamicPricingManager;
     
@@ -516,27 +401,6 @@ public final class GUIShop extends JavaPlugin {
             getLogUtil().log("[Warning] Error shutting down dynamic pricing: " + e.getMessage());
         }
         
-        // Shutdown economy manager
-        try {
-            if (economyManager != null) {
-                economyManager.shutdown();
-            }
-            EconomyManager.resetInstance();
-            economyManager = null;
-            getLogUtil().debugLog("Economy manager shutdown");
-        } catch (Exception e) {
-            getLogUtil().log("[Warning] Error shutting down economy manager: " + e.getMessage());
-        }
-        
-        // Reset economy config
-        try {
-            EconomyConfig.resetInstance();
-            economyConfig = null;
-            getLogUtil().debugLog("Economy config reset");
-        } catch (Exception e) {
-            getLogUtil().log("[Warning] Error resetting economy config: " + e.getMessage());
-        }
-        
         // Reset GUI listener
         try {
             GuiListener.resetInstance();
@@ -585,12 +449,12 @@ public final class GUIShop extends JavaPlugin {
             hadErrors = true;
         }
         
-        // Reinitialize internal economy
+        // Re-hook the Vault economy (an economy plugin may have been added since startup)
         try {
-            initInternalEconomy();
-            getLogUtil().debugLog("Internal economy reinitialized");
+            resolveEconomy(false);
+            getLogUtil().debugLog("Economy hook refreshed");
         } catch (Exception e) {
-            getLogUtil().log("[Warning] Failed to reinitialize internal economy: " + e.getMessage());
+            getLogUtil().log("[Warning] Failed to refresh the economy hook: " + e.getMessage());
         }
 
         // Reload all shops and menu items (warmup)

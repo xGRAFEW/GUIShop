@@ -3,7 +3,6 @@ package com.pablo67340.guishop.listenable;
 import com.pablo67340.guishop.GUIShop;
 import com.pablo67340.guishop.config.Config;
 import com.pablo67340.guishop.definition.Item;
-import com.pablo67340.guishop.economy.EconomyManager;
 import com.pablo67340.guishop.statistics.StatisticsManager;
 import com.pablo67340.guishop.util.PDCUtil;
 import org.bukkit.ChatColor;
@@ -46,7 +45,6 @@ public final class PlayerListener implements Listener {
         "reload",
         "edit",
         "open",
-        "eco",
         "market",
         "iteminfo",
         "parsemob",
@@ -131,7 +129,7 @@ public final class PlayerListener implements Listener {
                 if (line1.equalsIgnoreCase(ChatColor.translateAlternateColorCodes('&',
                         Config.getTitlesConfig().getSignTitle()))) {
                     // If the player has Permission to use sign
-                    if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.use") && GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.sign.use")
+                    if (GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.use") && GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.sign.use")
                             || player.isOp()) {
                         e.setCancelled(true);
                         Menu menu = new Menu(player);
@@ -180,7 +178,7 @@ public final class PlayerListener implements Listener {
     }
     
     /**
-     * Load player statistics, preferences, and economy cache when they join.
+     * Load player statistics and preferences when they join.
      */
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -190,16 +188,10 @@ public final class PlayerListener implements Listener {
             statsManager.loadPlayerCache(event.getPlayer());
             statsManager.loadPreferencesCache(event.getPlayer().getUniqueId());
         }
-        
-        // Load economy cache
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        if (ecoManager != null && ecoManager.isAvailable()) {
-            ecoManager.loadPlayerCache(event.getPlayer());
-        }
     }
-    
+
     /**
-     * Save and unload player statistics, preferences, and economy cache when they leave.
+     * Save and unload player statistics and preferences when they leave.
      */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -209,13 +201,7 @@ public final class PlayerListener implements Listener {
             statsManager.unloadPlayerCache(event.getPlayer());
             statsManager.unloadPreferencesCache(event.getPlayer().getUniqueId());
         }
-        
-        // Unload economy cache
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        if (ecoManager != null && ecoManager.isAvailable()) {
-            ecoManager.unloadPlayerCache(event.getPlayer());
-        }
-        
+
         // Clean up item info debug mode
         GUIShop.getITEM_INFO_DEBUG().remove(event.getPlayer().getUniqueId());
     }

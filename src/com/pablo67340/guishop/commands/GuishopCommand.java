@@ -5,8 +5,6 @@ import com.cryptomorin.xseries.XPotion;
 
 import com.pablo67340.guishop.GUIShop;
 import com.pablo67340.guishop.config.Config;
-import com.pablo67340.guishop.economy.EconomyConfig;
-import com.pablo67340.guishop.economy.EconomyManager;
 import com.pablo67340.guishop.definition.ItemType;
 import com.pablo67340.guishop.definition.PotionInfo;
 import com.pablo67340.guishop.listenable.Menu;
@@ -70,7 +68,7 @@ public class GuishopCommand implements CommandExecutor {
      */
     private boolean hasRequiredPermission(CommandSender commandSender, String subCommand) {
         GUIShop.getINSTANCE().getLogUtil().debugLog("commandSender is op: " + commandSender.isOp());
-        return GUIShop.getINSTANCE().getMiscUtils().getPerms().has(commandSender, getRequiredPermission(subCommand)) || commandSender.isOp();
+        return GUIShop.getINSTANCE().getMiscUtils().has(commandSender, getRequiredPermission(subCommand)) || commandSender.isOp();
     }
 
     @Override
@@ -91,8 +89,6 @@ public class GuishopCommand implements CommandExecutor {
                 // Console-allowed commands
                 if (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("r")) {
                     GUIShop.getINSTANCE().reload(commandSender, false);
-                } else if (args[0].equalsIgnoreCase("eco") || args[0].equalsIgnoreCase("economy")) {
-                    handleEcoCommand(commandSender, args);
                 } else if (args[0].equalsIgnoreCase("open") || args[0].equalsIgnoreCase("o")) {
                     handleOpenCommand(commandSender, args);
                 } else {
@@ -654,9 +650,6 @@ public class GuishopCommand implements CommandExecutor {
             } else if (args[0].equalsIgnoreCase("open") || args[0].equalsIgnoreCase("o")) {
                 // Open a shop or the menu on behalf of another player
                 handleOpenCommand(commandSender, args);
-            } else if (args[0].equalsIgnoreCase("eco") || args[0].equalsIgnoreCase("economy")) {
-                // Economy management commands
-                handleEcoCommand(commandSender, args);
             } else if (args[0].equalsIgnoreCase("market") || args[0].equalsIgnoreCase("dp") || args[0].equalsIgnoreCase("dynamicpricing")) {
                 // Dynamic pricing / market commands
                 handleMarketCommand(commandSender, args);
@@ -688,7 +681,7 @@ public class GuishopCommand implements CommandExecutor {
 
         // Mirror the checks the GUI performs so the sender gets a reason instead of
         // the target silently receiving a denial message
-        if (!GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(target, "guishop.use") && !target.isOp()) {
+        if (!GUIShop.getINSTANCE().getMiscUtils().playerHas(target, "guishop.use") && !target.isOp()) {
             sender.sendMessage(ChatColor.RED + target.getName() + " is missing the guishop.use permission.");
             return;
         }
@@ -719,199 +712,6 @@ public class GuishopCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.GREEN + "Opened shop '" + shop + "' for " + target.getName() + ".");
     }
 
-    /**
-     * Handle /gs eco subcommands.
-     */
-    private void handleEcoCommand(CommandSender sender, String[] args) {
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        
-        // Check if internal economy is enabled
-        if (ecoManager == null || !ecoManager.isAvailable()) {
-            sender.sendMessage(ChatColor.RED + "Internal economy is not enabled. Set 'enabled: true' in economy.yml");
-            return;
-        }
-        
-        // /gs eco help or /gs eco
-        if (args.length < 2) {
-            sendEcoHelp(sender);
-            return;
-        }
-        
-        String subCommand = args[1].toLowerCase();
-        
-        switch (subCommand) {
-            case "give", "add" -> handleEcoGive(sender, args);
-            case "take", "remove", "withdraw" -> handleEcoTake(sender, args);
-            case "set" -> handleEcoSet(sender, args);
-            case "balance", "bal", "check" -> handleEcoBalance(sender, args);
-            case "reset" -> handleEcoReset(sender, args);
-            default -> sendEcoHelp(sender);
-        }
-    }
-    
-    private void sendEcoHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "=== GUIShop Economy Commands ===");
-        sender.sendMessage(ChatColor.YELLOW + "/gs eco give <player> <amount>" + ChatColor.GRAY + " - Give money to a player");
-        sender.sendMessage(ChatColor.YELLOW + "/gs eco take <player> <amount>" + ChatColor.GRAY + " - Take money from a player");
-        sender.sendMessage(ChatColor.YELLOW + "/gs eco set <player> <amount>" + ChatColor.GRAY + " - Set a player's balance");
-        sender.sendMessage(ChatColor.YELLOW + "/gs eco balance <player>" + ChatColor.GRAY + " - Check a player's balance");
-        sender.sendMessage(ChatColor.YELLOW + "/gs eco reset <player>" + ChatColor.GRAY + " - Reset a player's balance");
-        sender.sendMessage(ChatColor.GRAY + "Amounts support abbreviations: 1k, 1.5M, 100B, etc.");
-    }
-    
-    private void handleEcoGive(CommandSender sender, String[] args) {
-        if (args.length < 4) {
-            sender.sendMessage(ChatColor.RED + "Usage: /gs eco give <player> <amount>");
-            return;
-        }
-        
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        String playerName = args[2];
-        String amountStr = args[3];
-        
-        UUID targetUUID = ecoManager.getUUIDByUsername(playerName);
-        if (targetUUID == null) {
-            sender.sendMessage(ChatColor.RED + "Player '" + playerName + "' not found.");
-            return;
-        }
-        
-        // Ensure account exists
-        if (!ecoManager.hasAccount(targetUUID)) {
-            ecoManager.createAccount(targetUUID, playerName);
-        }
-        
-        BigDecimal amount = ecoManager.parseAmount(amountStr);
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            sender.sendMessage(ChatColor.RED + "Invalid amount: " + amountStr);
-            return;
-        }
-        
-        boolean success = ecoManager.deposit(targetUUID, amount);
-        if (success) {
-            BigDecimal newBalance = ecoManager.getBalance(targetUUID);
-            sender.sendMessage(ChatColor.GREEN + "Gave " + ecoManager.format(amount) + " to " + playerName + ".");
-            sender.sendMessage(ChatColor.GRAY + "New balance: " + ecoManager.format(newBalance));
-        } else {
-            sender.sendMessage(ChatColor.RED + "Failed to give money to " + playerName + ".");
-        }
-    }
-    
-    private void handleEcoTake(CommandSender sender, String[] args) {
-        if (args.length < 4) {
-            sender.sendMessage(ChatColor.RED + "Usage: /gs eco take <player> <amount>");
-            return;
-        }
-        
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        String playerName = args[2];
-        String amountStr = args[3];
-        
-        UUID targetUUID = ecoManager.getUUIDByUsername(playerName);
-        if (targetUUID == null || !ecoManager.hasAccount(targetUUID)) {
-            sender.sendMessage(ChatColor.RED + "Player '" + playerName + "' not found or has no account.");
-            return;
-        }
-        
-        BigDecimal amount = ecoManager.parseAmount(amountStr);
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            sender.sendMessage(ChatColor.RED + "Invalid amount: " + amountStr);
-            return;
-        }
-        
-        boolean success = ecoManager.withdraw(targetUUID, amount);
-        if (success) {
-            BigDecimal newBalance = ecoManager.getBalance(targetUUID);
-            sender.sendMessage(ChatColor.GREEN + "Took " + ecoManager.format(amount) + " from " + playerName + ".");
-            sender.sendMessage(ChatColor.GRAY + "New balance: " + ecoManager.format(newBalance));
-        } else {
-            sender.sendMessage(ChatColor.RED + "Failed to take money from " + playerName + ". (Insufficient funds or limit reached)");
-        }
-    }
-    
-    private void handleEcoSet(CommandSender sender, String[] args) {
-        if (args.length < 4) {
-            sender.sendMessage(ChatColor.RED + "Usage: /gs eco set <player> <amount>");
-            return;
-        }
-        
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        String playerName = args[2];
-        String amountStr = args[3];
-        
-        UUID targetUUID = ecoManager.getUUIDByUsername(playerName);
-        if (targetUUID == null) {
-            sender.sendMessage(ChatColor.RED + "Player '" + playerName + "' not found.");
-            return;
-        }
-        
-        // Ensure account exists
-        if (!ecoManager.hasAccount(targetUUID)) {
-            ecoManager.createAccount(targetUUID, playerName);
-        }
-        
-        BigDecimal amount = ecoManager.parseAmount(amountStr);
-        if (amount == null) {
-            sender.sendMessage(ChatColor.RED + "Invalid amount: " + amountStr);
-            return;
-        }
-        
-        boolean success = ecoManager.setBalance(targetUUID, amount);
-        if (success) {
-            BigDecimal newBalance = ecoManager.getBalance(targetUUID);
-            sender.sendMessage(ChatColor.GREEN + "Set " + playerName + "'s balance to " + ecoManager.format(newBalance) + ".");
-        } else {
-            sender.sendMessage(ChatColor.RED + "Failed to set balance for " + playerName + ".");
-        }
-    }
-    
-    private void handleEcoBalance(CommandSender sender, String[] args) {
-        if (args.length < 3) {
-            sender.sendMessage(ChatColor.RED + "Usage: /gs eco balance <player>");
-            return;
-        }
-        
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        String playerName = args[2];
-        
-        UUID targetUUID = ecoManager.getUUIDByUsername(playerName);
-        if (targetUUID == null || !ecoManager.hasAccount(targetUUID)) {
-            sender.sendMessage(ChatColor.RED + "Player '" + playerName + "' not found or has no account.");
-            return;
-        }
-        
-        BigDecimal balance = ecoManager.getBalance(targetUUID);
-        sender.sendMessage(ChatColor.GOLD + playerName + "'s balance: " + ChatColor.GREEN + ecoManager.format(balance));
-    }
-    
-    private void handleEcoReset(CommandSender sender, String[] args) {
-        if (args.length < 3) {
-            sender.sendMessage(ChatColor.RED + "Usage: /gs eco reset <player>");
-            return;
-        }
-        
-        EconomyManager ecoManager = EconomyManager.getInstance();
-        EconomyConfig ecoConfig = EconomyConfig.getInstance();
-        String playerName = args[2];
-        
-        UUID targetUUID = ecoManager.getUUIDByUsername(playerName);
-        if (targetUUID == null) {
-            sender.sendMessage(ChatColor.RED + "Player '" + playerName + "' not found.");
-            return;
-        }
-        
-        // Ensure account exists
-        if (!ecoManager.hasAccount(targetUUID)) {
-            ecoManager.createAccount(targetUUID, playerName);
-        }
-        
-        BigDecimal startingBalance = ecoConfig.getStartingBalance();
-        boolean success = ecoManager.setBalance(targetUUID, startingBalance);
-        if (success) {
-            sender.sendMessage(ChatColor.GREEN + "Reset " + playerName + "'s balance to " + ecoManager.format(startingBalance) + ".");
-        } else {
-            sender.sendMessage(ChatColor.RED + "Failed to reset balance for " + playerName + ".");
-        }
-    }
 
     protected void editMenu(String number, Player player) {
         // Add to CREATOR before opening so the menu sets up editor handlers

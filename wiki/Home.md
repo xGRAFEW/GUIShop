@@ -18,7 +18,6 @@ Welcome to the official GUIShop documentation. This wiki covers everything you n
 - [Menu Configuration](Menu-Configuration)
 - [Command Items](Command-Items)
 - [Dynamic Pricing](Dynamic-Pricing)
-- [Internal Economy](Internal-Economy)
 - [Messages Configuration](Messages-Configuration)
 - [Worth Display Configuration](Worth-Display-Configuration)
 - [Special Item Configurations](Special-Item-Configurations)

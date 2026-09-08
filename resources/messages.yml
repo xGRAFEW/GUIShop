@@ -75,8 +75,8 @@ messages:
   # The message when there is no economy system
   no-economy-system:
     - '&cNo economy system detected!'
-    - '&7Please contact a server administrator, or enable'
-    - '&7GUIShop''s internal economy in &feconomy.yml&7.'
+    - '&7GUIShop needs an economy plugin registered with Vault'
+    - '&7(CMI, EssentialsX, ...). Please contact an administrator.'
 
   # The message for commands that can only be ran as a player
   only-player: '&4You can only run this command as a player!'
@@ -492,10 +492,6 @@ messages:
     # The entry in the list
     entry: '&7/guishop &eopen <player> [shop] &7- &aOpen a shop or the menu for a player'
 
-  # Messages for /guishop eco (internal economy)
-  eco:
-    # The entry in the list
-    entry: '&7/guishop &eeco &7- &aManage internal economy (give/take/set/balance/reset)'
 
   # Messages for /guishop market (dynamic pricing)
   market:

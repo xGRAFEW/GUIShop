@@ -45,15 +45,15 @@ public class GuishopUserCommand implements CommandExecutor {
      * @param shop the command argument for a specific shop, can be null
      */
     void buyCommand(Player player, String shop) {
-        if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.use") || player.isOp()) {
+        if (GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.use") || player.isOp()) {
 
             if (shop == null) {
                 PlayerListener.INSTANCE.openMenu(player);
 
             } else {
 
-                if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.shop." + shop.toLowerCase())
-                        || GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(player, "guishop.shop.*") || player.isOp()) {
+                if (GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.shop." + shop.toLowerCase())
+                        || GUIShop.getINSTANCE().getMiscUtils().playerHas(player, "guishop.shop.*") || player.isOp()) {
                     new Menu(player).openShop(player, shop);
                 } else {
                     player.sendMessage(GUIShop.getINSTANCE().getConfigManager().getNoPermission());

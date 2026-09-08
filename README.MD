@@ -17,7 +17,7 @@ The ultimate GUI-based shop plugin for Minecraft servers. Say goodbye to confusi
 - **Worth Display System** - Shows item sell values directly in item lore (requires PacketEvents)
 - **Full GUI-Based Item Editor** - Edit prices, names, enchantments through intuitive GUIs
 - **Drag-and-Drop Shop Building** - Place and rearrange items by simply dragging them
-- **Built-In Economy** - Optional internal economy system (no external economy plugin needed!)
+- **Vault Economy** - Uses your server's economy plugin (CMI, EssentialsX, ...) via Vault
 - **Command Items** - Sell commands that execute when purchased
 - **Custom Items** - Full support for enchantments, potions, fireworks, spawners, and custom NBT
 - **Native Spawner Support** - Configure and sell mob spawners with any entity type
@@ -43,7 +43,7 @@ The ultimate GUI-based shop plugin for Minecraft servers. Say goodbye to confusi
 
 1. Download GUIShop from [SpigotMC](https://www.spigotmc.org/resources/guishop.2451/)
 2. Place the JAR in your `plugins` folder
-3. Install Vault and an economy plugin (or enable GUIShop's internal economy)
+3. Install Vault and an economy plugin (CMI, EssentialsX, ...)
 4. Restart your server
 5. Configure shops in `plugins/GUIShop/shops/` folder
 
@@ -70,10 +70,6 @@ See the [Wiki](https://github.com/pablo67340/GUIShop/wiki) for comprehensive doc
 | Command | Description |
 |---------|-------------|
 | `/shop`, `/buy` | Open the shop menu |
-| `/sell` | Open the sell GUI |
-| `/value` | Check item buy/sell values |
-| `/bal`, `/balance` | Check your balance (internal economy) |
-| `/pay <player> <amount>` | Send money (internal economy) |
 
 ### Admin Commands
 
@@ -87,17 +83,6 @@ See the [Wiki](https://github.com/pablo67340/GUIShop/wiki) for comprehensive doc
 | `/gs toggleworth` | Toggle worth display for yourself |
 | `/gs iteminfo` | Display comprehensive info about held item |
 
-### Economy Admin Commands
-
-| Command | Description |
-|---------|-------------|
-| `/gs eco give <player> <amount>` | Give money to a player |
-| `/gs eco take <player> <amount>` | Take money from a player |
-| `/gs eco set <player> <amount>` | Set a player's balance |
-| `/gs eco balance <player>` | Check a player's balance |
-| `/gs eco reset <player>` | Reset to starting balance |
-
-All amounts support abbreviations: `1k`, `1.5M`, `100B`, etc.
 
 ## In-Game Editor
 
@@ -138,7 +123,6 @@ GUIShop features a powerful GUI-based editor:
 - [Command Items](https://github.com/pablo67340/GUIShop/wiki/Command-Items)
 - [Dynamic Pricing](https://github.com/pablo67340/GUIShop/wiki/Dynamic-Pricing)
 - [Special Item Configurations](https://github.com/pablo67340/GUIShop/wiki/Special-Item-Configurations)
-- [Internal Economy](https://github.com/pablo67340/GUIShop/wiki/Internal-Economy)
 - [Worth Display](https://github.com/pablo67340/GUIShop/wiki/Worth-Display-Configuration)
 - [Statistics API](https://github.com/pablo67340/GUIShop/wiki/Statistics-API)
 - [API Documentation](https://github.com/pablo67340/GUIShop/wiki/API-Documentation)

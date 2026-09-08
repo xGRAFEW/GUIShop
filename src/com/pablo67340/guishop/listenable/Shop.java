@@ -1541,7 +1541,7 @@ public class Shop {
         Player clickingPlayer = (Player) event.getWhoClicked();
         if (item.hasTargetShop()) {
             String shopName = item.getTargetShop();
-            if (GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(clickingPlayer, "guishop.shop." + shopName.toLowerCase()) || GUIShop.getINSTANCE().getMiscUtils().getPerms().playerHas(clickingPlayer, "guishop.shop.*")) {
+            if (GUIShop.getINSTANCE().getMiscUtils().playerHas(clickingPlayer, "guishop.shop." + shopName.toLowerCase()) || GUIShop.getINSTANCE().getMiscUtils().playerHas(clickingPlayer, "guishop.shop.*")) {
                 if (!item.isResolveFailed()) {
                     hasClicked = true;
                     SchedulerUtil.runAtEntityLater(clickingPlayer, () -> this.menuInstance.openShop(clickingPlayer, shopName), 1L);

@@ -5,6 +5,44 @@ project/build/test knowledge — this file is for "what happened and what's next
 
 ---
 
+## 2026-09-08 — 9.6.0: remove the internal economy, fix the Vault load-order bug
+
+**Symptom reported:** buying 1 item worked, buying 32 or 64 always said "not enough money" even
+though `/money` showed 1M. `/bal` showed no money at all.
+
+**Root cause (confirmed from the real server's `plugins/GUIShop/Logs/`):** GUIShop's *internal*
+economy was registering itself with Vault at `ServicePriority.High`, so it overrode CMI. The player
+was actually spending GUIShop's own `starting-balance: 1000.0`, which 5 purchases at $200 drained to
+exactly $0 (`transaction.log` shows the 5 buys; `debug.log` shows `getBalance: ... = 0.0`). Setting
+`economy.yml` → `enabled: false` did not help, because `onEnable()` did `return;` when Vault had no
+economy yet — and GUIShop enables *before* CMI, so the lookup always failed and the whole plugin
+went dead.
+
+**What was done:**
+1. Removed the internal economy entirely: `EconomyManager`, `EconomyConfig`, `GUIShopEconomy`,
+   `EconomyCommands`, `resources/economy.yml`, the `/bal /balance /money /pay /send /togglepay`
+   dynamic command registration, `/gs eco`, the `guishop.economy.*` permissions, and
+   `wiki/Internal-Economy.md`. GUIShop now *only* spends the Vault economy's balance.
+   `%guishop_balance*%` placeholders now read Vault instead.
+2. Replaced the fatal `onEnable()` bail-out with `resolveEconomy(boolean)` — a lazy hook that
+   retries once a second for 40s and logs `Economy hooked: <name> (via Vault)`. Listeners and
+   commands are now always registered regardless of load order. `reload()` re-hooks too.
+3. `MiscUtils.setupEconomy()` no longer requires a Vault *Permission* provider (it used to return
+   false and kill the economy when only the permission lookup was missing). Permission checks go
+   through new null-safe `MiscUtils.playerHas/has` helpers that fall back to Bukkit's own check.
+4. Added economy plugins to `softdepend` so Bukkit prefers to enable them first.
+
+**Also fixed on the test server (not a code change):** `plugins/` had both `Vault-1.7.4.jar` and
+`VaultUnlocked-2.20.2.jar`, which Bukkit logged as `Ambiguous plugin name 'Vault'` and resolved to
+VaultUnlocked. Moved VaultUnlocked to `_removed_plugins/`. With only Vault 1.7.3-CMI present the
+enable order becomes Vault → CMI → `[Vault][Economy] CMI Economy hooked.` → GUIShop.
+
+**Not verified by an agent:** the actual in-game click-to-buy-64 flow — that needs a real client.
+The balance source and the quantity math (`buyPrice × quantity`) were both verified by reading code
+and logs.
+
+---
+
 ## 2026-09-07 — Folia 26.2 compatibility bump + release 9.4.5
 
 **Goal:** make sure GUIShop runs cleanly on Folia 26.2 (tested via the Canvas-based local test
